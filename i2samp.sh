@@ -239,10 +239,12 @@ raspbian_check() {
     if [ -f /etc/os-release ]; then
         if cat /etc/os-release | grep "/sid" > /dev/null; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+        elif cat /etc/os-release | grep "trixie" > /dev/null; then
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "bookworm" > /dev/null; then
-            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "bullseye" > /dev/null; then
-            IS_SUPPORTED=false && IS_EXPERIMENTAL=true
+            IS_SUPPORTED=true && IS_EXPERIMENTAL=false
         elif cat /etc/os-release | grep "buster" > /dev/null; then
             IS_SUPPORTED=false && IS_EXPERIMENTAL=true
         elif cat /etc/os-release | grep "stretch" > /dev/null; then
