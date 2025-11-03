@@ -260,6 +260,58 @@ class Picarx(object):
         direction = 'right' if angle >= 0 else 'left'
         self.tank_turn(direction, speed, abs(angle))
 
+    def pivot_turn(self, direction, speed, angle=None):
+        '''
+        Pivot turn - turn around one stationary wheel (tighter turn radius)
+        
+        param direction: turn direction, 'left' or 'right' or -1/1
+        type direction: str or int
+        param speed: turn speed (0-100)
+        type speed: int
+        param angle: optional angle in degrees (uses calibrated timing)
+        type angle: float or None
+        '''
+        speed = constrain(speed, 0, 100)
+        
+        # Normalize direction input
+        if direction == 'left' or direction == -1:
+            # Left pivot: left motor stopped, right motor forward
+            self.set_motor_speed(1, 0)      # left motor stopped
+            self.set_motor_speed(2, -speed)  # right motor forward
+        elif direction == 'right' or direction == 1:
+            # Right pivot: right motor stopped, left motor forward
+            self.set_motor_speed(1, speed)  # left motor forward
+            self.set_motor_speed(2, 0)      # right motor stopped
+        else:
+            raise ValueError("direction must be 'left', 'right', -1, or 1")
+        
+        # If angle is specified, calculate timing and auto-stop
+        if angle is not None:
+            # Get calibrated 360° time and speed
+            calibrated_360_time = float(self.config_flie.get("pivot_turn_360_time", default_value=8.0))
+            calibrated_speed = float(self.config_flie.get("pivot_turn_calibration_speed", default_value=50))
+            
+            # Calculate time needed for the requested angle
+            # Scale by speed difference (inversely proportional to speed)
+            speed_scale = calibrated_speed / speed if speed > 0 else 1.0
+            turn_time = (abs(angle) / 360.0) * calibrated_360_time * speed_scale
+            
+            # Execute the turn with timing
+            time.sleep(turn_time)
+            self.stop()
+    
+    def pivot_turn_angle(self, angle, speed=50):
+        '''
+        Convenience method for angle-based pivot turns
+        
+        param angle: angle in degrees (positive = right, negative = left)
+        type angle: float
+        param speed: turn speed (0-100)
+        type speed: int
+        '''
+        direction = 'right' if angle >= 0 else 'left'
+        self.pivot_turn(direction, speed, abs(angle))
+
     def stop(self):
         '''
         Execute twice to make sure it stops

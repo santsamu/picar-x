@@ -14,6 +14,7 @@ manual = '''
     [5]: right motor                [E]: motors run/stop
     
     [6]: tank turn calibration      [T]: test tank turn 360°
+    [7]: pivot turn calibration     [P]: test pivot turn 360°
 
     [SPACE]: confirm calibration                [Crtl+C]: quit
                                       
@@ -22,10 +23,12 @@ manual = '''
 px = Picarx()
 px_power = 30
 tank_turn_speed = 50  # Default speed for tank turn calibration
+pivot_turn_speed = 50  # Default speed for pivot turn calibration
 
 servo_num = 0
 motor_num = 0
 tank_turn_time = float(px.config_flie.get("tank_turn_360_time", default_value=4.0))  # Default 4 seconds for 360°
+pivot_turn_time = float(px.config_flie.get("pivot_turn_360_time", default_value=8.0))  # Default 8 seconds for 360° (slower than tank turn)
 servo_names = ['direction servo', 'camera pan servo', 'camera tilt servo']
 motor_names = ['left motor', 'right motor']
 servos_cali = [px.dir_cali_val, px.cam_pan_cali_val, px.cam_tilt_cali_val]
@@ -101,6 +104,61 @@ def test_tank_turn_360():
     
     print("360° turn complete! Check if the car returned to its original orientation.")
 
+def pivot_turn_calibration():
+    """Interactive pivot turn calibration to measure 360° turn time"""
+    global pivot_turn_time
+    import time
+    
+    print("\n=== Pivot Turn Calibration ===")
+    print("This will help calibrate how long it takes for a 360° pivot turn.")
+    print("Make sure you have enough space around the car.")
+    print(f"Current speed setting: {pivot_turn_speed}")
+    print("\nThe car will pivot using one stationary wheel.")
+    
+    # User interaction
+    input("Position the car and press Enter when ready...")
+    
+    print("Starting 360° pivot turn in 3 seconds...")
+    for i in range(3, 0, -1):
+        print(f"{i}...")
+        time.sleep(1)
+    
+    start_time = time.time()
+    px.pivot_turn('right', pivot_turn_speed)
+    
+    print("Pivot turning... Press Enter when the car completes 360° and returns to start position")
+    input()  # Wait for user input
+    
+    px.stop()
+    measured_time = time.time() - start_time
+    
+    print(f"\nMeasured time for 360° pivot turn: {measured_time:.2f} seconds")
+    print(f"Speed used: {pivot_turn_speed}")
+    
+    # Ask if user wants to save this calibration
+    save = input("Save this calibration? (y/n): ").lower()
+    if save == 'y':
+        pivot_turn_time = measured_time
+        px.config_flie.set("pivot_turn_360_time", pivot_turn_time)
+        px.config_flie.set("pivot_turn_calibration_speed", pivot_turn_speed)
+        print(f"✓ Saved: 360° pivot turn takes {pivot_turn_time:.2f}s at speed {pivot_turn_speed}")
+    else:
+        print("Calibration not saved")
+
+def test_pivot_turn_360():
+    """Test a 360° pivot turn using current calibration"""
+    import time
+    
+    print(f"\nTesting 360° pivot turn using calibrated time: {pivot_turn_time:.2f}s at speed {pivot_turn_speed}")
+    print("Starting in 3 seconds...")
+    time.sleep(3)
+    
+    px.pivot_turn('right', pivot_turn_speed)
+    time.sleep(pivot_turn_time)
+    px.stop()
+    
+    print("360° pivot turn complete! Check if the car returned to its original orientation.")
+
 def servos_test():
     px.set_dir_servo_angle(-30)
     sleep(0.5)
@@ -148,6 +206,7 @@ def show_info():
     print('[ %s ] [ %s ]'%(servo_names[servo_num], motor_names[motor_num])) 
     print('offset: %s, %s'%(servos_offset, motors_offset))
     print(f'tank turn 360° time: {tank_turn_time:.2f}s @ speed {tank_turn_speed}')
+    print(f'pivot turn 360° time: {pivot_turn_time:.2f}s @ speed {pivot_turn_speed}')
 
 
 def cali_helper(): 
@@ -167,22 +226,27 @@ def cali_helper():
         # readkey
         key = readchar.readkey()
         key = key.lower()
-        # select the servo 
-        if key in ('123'):
-            servo_num = int(key)-1
-            show_info()
-        if key in ('456'):
-            if key == '6':
+        if key in ('1234567'):
+            if key in ('123'):
+                servo_num = int(key)-1
+                show_info()
+            elif key == '4' or key == '5':
+                motor_num = int(key)-4
+                show_info()
+            elif key == '6':
                 tank_turn_calibration()
                 show_info()
-            else:
-                motor_num = int(key)-4
+            elif key == '7':
+                pivot_turn_calibration()
                 show_info()
         # servos move
         elif key == 'r':
             servos_test()
         elif key == 't':
             test_tank_turn_360()
+            show_info()
+        elif key == 'p':
+            test_pivot_turn_360()
             show_info()
         elif key == 'w' or key == 'd':
             servos_offset[servo_num] += step
@@ -225,10 +289,16 @@ def cali_helper():
                     px.cam_pan_servo_calibrate(servos_offset[1])
                     px.cam_tilt_servo_calibrate(servos_offset[2])
                     px.motor_direction_calibrate(motor_num +1 , motors_offset[motor_num])
+                    # Save turn calibration values
+                    px.config_flie.set("tank_turn_360_time", tank_turn_time)
+                    px.config_flie.set("tank_turn_calibration_speed", tank_turn_speed)
+                    px.config_flie.set("pivot_turn_360_time", pivot_turn_time)
+                    px.config_flie.set("pivot_turn_calibration_speed", pivot_turn_speed)
                     sleep(0.2)
                     servos_offset = [px.dir_cali_val, px.cam_pan_cali_val, px.cam_tilt_cali_val]
                     show_info()
                     print('The calibration value has been saved.')
+                    print(f'Turn calibrations saved: Tank 360°={tank_turn_time:.2f}s, Pivot 360°={pivot_turn_time:.2f}s')
                     break
                 elif key == 'n':
                     show_info()
