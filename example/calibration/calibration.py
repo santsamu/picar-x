@@ -12,6 +12,8 @@ manual = '''
 
     [4]: left motor                 [Q]: change motor direction
     [5]: right motor                [E]: motors run/stop
+    
+    [6]: tank turn calibration      [T]: test tank turn 360°
 
     [SPACE]: confirm calibration                [Crtl+C]: quit
                                       
@@ -19,15 +21,85 @@ manual = '''
 
 px = Picarx()
 px_power = 30
+tank_turn_speed = 50  # Default speed for tank turn calibration
 
 servo_num = 0
 motor_num = 0
+tank_turn_time = float(px.config_flie.get("tank_turn_360_time", default_value=4.0))  # Default 4 seconds for 360°
 servo_names = ['direction servo', 'camera pan servo', 'camera tilt servo']
 motor_names = ['left motor', 'right motor']
 servos_cali = [px.dir_cali_val, px.cam_pan_cali_val, px.cam_tilt_cali_val]
 motors_cali = px.cali_dir_value
 servos_offset = list.copy(servos_cali)
 motors_offset = list.copy(motors_cali)
+
+def tank_turn_calibration():
+    """Interactive tank turn calibration to measure 360° turn time"""
+    import time
+    global tank_turn_time
+    
+    print("\n=== Tank Turn Calibration ===")
+    print("This will help calibrate how long it takes to make a 360° turn")
+    print(f"Current speed: {tank_turn_speed}")
+    print(f"Current 360° time: {tank_turn_time:.2f} seconds")
+    print("\nInstructions:")
+    print("1. Place a marker (tape, pen) pointing forward from the car")
+    print("2. Press ENTER to start calibration turn")
+    print("3. Watch the marker and press ENTER when it completes 360°")
+    print("4. The time will be automatically measured and saved")
+    print("\nPress ENTER to start, or 'c' to cancel...")
+    
+    key = input().lower()
+    if key == 'c':
+        return
+    
+    print("Starting 360° calibration turn in 3 seconds...")
+    time.sleep(1)
+    print("3...")
+    time.sleep(1)
+    print("2...")
+    time.sleep(1)
+    print("1...")
+    time.sleep(1)
+    print("GO! Press ENTER when the marker completes 360°")
+    
+    # Start tank turn and timer
+    start_time = time.time()
+    px.tank_turn('right', tank_turn_speed)
+    
+    # Wait for user to press enter when 360° is complete
+    input()
+    px.stop()
+    
+    # Calculate the time
+    measured_time = time.time() - start_time
+    
+    print(f"\nMeasured time for 360° turn: {measured_time:.2f} seconds")
+    print(f"Speed used: {tank_turn_speed}")
+    
+    # Ask if user wants to save this calibration
+    save = input("Save this calibration? (y/n): ").lower()
+    if save == 'y':
+        tank_turn_time = measured_time
+        px.config_flie.set("tank_turn_360_time", tank_turn_time)
+        px.config_flie.set("tank_turn_calibration_speed", tank_turn_speed)
+        print(f"✓ Saved: 360° turn takes {tank_turn_time:.2f}s at speed {tank_turn_speed}")
+    else:
+        print("Calibration not saved")
+
+def test_tank_turn_360():
+    """Test a 360° turn using current calibration"""
+    import time
+    
+    print(f"\nTesting 360° turn using calibrated time: {tank_turn_time:.2f}s at speed {tank_turn_speed}")
+    print("Starting in 3 seconds...")
+    time.sleep(3)
+    
+    px.tank_turn('right', tank_turn_speed)
+    time.sleep(tank_turn_time)
+    px.stop()
+    
+    print("360° turn complete! Check if the car returned to its original orientation.")
 
 def servos_test():
     px.set_dir_servo_angle(-30)
@@ -75,6 +147,7 @@ def show_info():
     print(manual)
     print('[ %s ] [ %s ]'%(servo_names[servo_num], motor_names[motor_num])) 
     print('offset: %s, %s'%(servos_offset, motors_offset))
+    print(f'tank turn 360° time: {tank_turn_time:.2f}s @ speed {tank_turn_speed}')
 
 
 def cali_helper(): 
@@ -98,12 +171,19 @@ def cali_helper():
         if key in ('123'):
             servo_num = int(key)-1
             show_info()
-        if key in ('45'):
-            motor_num = int(key)-4
-            show_info()
+        if key in ('456'):
+            if key == '6':
+                tank_turn_calibration()
+                show_info()
+            else:
+                motor_num = int(key)-4
+                show_info()
         # servos move
         elif key == 'r':
             servos_test()
+        elif key == 't':
+            test_tank_turn_360()
+            show_info()
         elif key == 'w' or key == 'd':
             servos_offset[servo_num] += step
             if servos_offset[servo_num] > 20:

@@ -208,7 +208,7 @@ class Picarx(object):
             self.set_motor_speed(1, speed)
             self.set_motor_speed(2, -1*speed)                  
 
-    def tank_turn(self, direction, speed):
+    def tank_turn(self, direction, speed, angle=None):
         '''
         Tank turn - rotate in place by driving motors in opposite directions
         
@@ -216,20 +216,49 @@ class Picarx(object):
         type direction: str or int
         param speed: turn speed (0-100)
         type speed: int
+        param angle: optional angle in degrees (uses calibrated timing)
+        type angle: float or None
         '''
         speed = constrain(speed, 0, 100)
         
         # Normalize direction input
         if direction == 'left' or direction == -1:
-            # Left turn: left motor backward, right motor forward
+            # Left turn: left motor backward, right motor forward (relative to car forward)
             self.set_motor_speed(1, -speed)  # left motor backward
-            self.set_motor_speed(2, -speed)   # right motor forward
+            self.set_motor_speed(2, -speed)   # right motor forward (opposite to left)
         elif direction == 'right' or direction == 1:
-            # Right turn: left motor forward, right motor backward
-            self.set_motor_speed(1, speed)   # left motor forward
-            self.set_motor_speed(2, speed)  # right motor backward
+            # Right turn: left motor forward, right motor backward (relative to car forward)
+            self.set_motor_speed(1, speed)   # left motor forward  
+            self.set_motor_speed(2, speed)  # right motor backward (opposite to left)
         else:
             raise ValueError("direction must be 'left', 'right', -1, or 1")
+        
+        # If angle is specified, calculate timing and auto-stop
+        if angle is not None:
+            # Get calibrated 360° time and speed
+            calibrated_360_time = float(self.config_flie.get("tank_turn_360_time", default_value=4.0))
+            calibrated_speed = float(self.config_flie.get("tank_turn_calibration_speed", default_value=50))
+            
+            # Calculate time needed for the requested angle
+            # Scale by speed difference (inversely proportional to speed)
+            speed_scale = calibrated_speed / speed if speed > 0 else 1.0
+            turn_time = (abs(angle) / 360.0) * calibrated_360_time * speed_scale
+            
+            # Execute the turn with timing
+            time.sleep(turn_time)
+            self.stop()
+    
+    def tank_turn_angle(self, angle, speed=50):
+        '''
+        Convenience method for angle-based tank turns
+        
+        param angle: angle in degrees (positive = right, negative = left)
+        type angle: float
+        param speed: turn speed (0-100)
+        type speed: int
+        '''
+        direction = 'right' if angle >= 0 else 'left'
+        self.tank_turn(direction, speed, abs(angle))
 
     def stop(self):
         '''
