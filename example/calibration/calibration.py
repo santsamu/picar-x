@@ -27,8 +27,8 @@ pivot_turn_speed = 50  # Default speed for pivot turn calibration
 
 servo_num = 0
 motor_num = 0
-tank_turn_time = float(px.config_flie.get("tank_turn_360_time", default_value=4.0))  # Default 4 seconds for 360°
-pivot_turn_time = float(px.config_flie.get("pivot_turn_360_time", default_value=8.0))  # Default 8 seconds for 360° (slower than tank turn)
+tank_turn_time = float(px.config_file.get("tank_turn_360_time", default_value=4.0))  # Default 4 seconds for 360°
+pivot_turn_time = float(px.config_file.get("pivot_turn_360_time", default_value=8.0))  # Default 8 seconds for 360° (slower than tank turn)
 servo_names = ['direction servo', 'camera pan servo', 'camera tilt servo']
 motor_names = ['left motor', 'right motor']
 servos_cali = [px.dir_cali_val, px.cam_pan_cali_val, px.cam_tilt_cali_val]
@@ -84,8 +84,8 @@ def tank_turn_calibration():
     save = input("Save this calibration? (y/n): ").lower()
     if save == 'y':
         tank_turn_time = measured_time
-        px.config_flie.set("tank_turn_360_time", tank_turn_time)
-        px.config_flie.set("tank_turn_calibration_speed", tank_turn_speed)
+        px.config_file.set("tank_turn_360_time", tank_turn_time)
+        px.config_file.set("tank_turn_calibration_speed", tank_turn_speed)
         print(f"✓ Saved: 360° turn takes {tank_turn_time:.2f}s at speed {tank_turn_speed}")
     else:
         print("Calibration not saved")
@@ -139,8 +139,8 @@ def pivot_turn_calibration():
     save = input("Save this calibration? (y/n): ").lower()
     if save == 'y':
         pivot_turn_time = measured_time
-        px.config_flie.set("pivot_turn_360_time", pivot_turn_time)
-        px.config_flie.set("pivot_turn_calibration_speed", pivot_turn_speed)
+        px.config_file.set("pivot_turn_360_time", pivot_turn_time)
+        px.config_file.set("pivot_turn_calibration_speed", pivot_turn_speed)
         print(f"✓ Saved: 360° pivot turn takes {pivot_turn_time:.2f}s at speed {pivot_turn_speed}")
     else:
         print("Calibration not saved")
@@ -290,10 +290,10 @@ def cali_helper():
                     px.cam_tilt_servo_calibrate(servos_offset[2])
                     px.motor_direction_calibrate(motor_num +1 , motors_offset[motor_num])
                     # Save turn calibration values
-                    px.config_flie.set("tank_turn_360_time", tank_turn_time)
-                    px.config_flie.set("tank_turn_calibration_speed", tank_turn_speed)
-                    px.config_flie.set("pivot_turn_360_time", pivot_turn_time)
-                    px.config_flie.set("pivot_turn_calibration_speed", pivot_turn_speed)
+                    px.config_file.set("tank_turn_360_time", tank_turn_time)
+                    px.config_file.set("tank_turn_calibration_speed", tank_turn_speed)
+                    px.config_file.set("pivot_turn_360_time", pivot_turn_time)
+                    px.config_file.set("pivot_turn_calibration_speed", pivot_turn_speed)
                     sleep(0.2)
                     servos_offset = [px.dir_cali_val, px.cam_pan_cali_val, px.cam_tilt_cali_val]
                     show_info()
