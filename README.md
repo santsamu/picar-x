@@ -1,9 +1,12 @@
-# Picar-X
+# Picar-X (Fork)
 
 Picar-X Python library for Raspberry Pi.
 
+**This is a fork of the original [SunFounder PiCar-X repository](https://github.com/sunfounder/picar-x)** with additional features and modifications.
+
 ## Links
 
+- **Original Repository**: <https://github.com/sunfounder/picar-x>
 - Docs: <https://docs.sunfounder.com/projects/picar-x-v20/en/latest/>
 - Robot Hat: <https://docs.sunfounder.com/projects/robot-hat-v4/en/latest/>
 - Forum: <https://forum.sunfounder.com/>
@@ -16,15 +19,24 @@ Picar-X Python library for Raspberry Pi.
   <https://docs.sunfounder.com/projects/picar-x-v20/en/latest/python/python_start/install_all_modules.html>
 
 ```bash
-git clone -b v2.0 https://github.com/sunfounder/picar-x.git
+# Clone this fork
+git clone -b v2.0 https://github.com/santsamu/picar-x.git
 cd picar-x
 sudo python3 setup.py install
 
+# Or clone the original SunFounder repository
+git clone -b v2.0 https://github.com/sunfounder/picar-x.git
+cd picar-x
+sudo python3 setup.py install
 ```
 
 ## Trouble Shooting
 
 ----------------------------------------------
+
+## About This Fork
+
+This fork includes additional examples, enhanced functionality, and bug fixes for the PiCar-X platform.
 
 ## About SunFounder
 

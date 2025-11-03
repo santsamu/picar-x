@@ -6,7 +6,6 @@ if __name__ == "__main__":
     try:
         # init picarx
         px = Picarx()
-
         # test motor
         px.forward(30)
         time.sleep(0.5)

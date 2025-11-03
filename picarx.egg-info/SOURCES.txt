@@ -12,3 +12,4 @@ picarx.egg-info/dependency_links.txt
 picarx.egg-info/not-zip-safe
 picarx.egg-info/requires.txt
 picarx.egg-info/top_level.txt
+test/test_tank_turn.py

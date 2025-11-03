@@ -208,6 +208,29 @@ class Picarx(object):
             self.set_motor_speed(1, speed)
             self.set_motor_speed(2, -1*speed)                  
 
+    def tank_turn(self, direction, speed):
+        '''
+        Tank turn - rotate in place by driving motors in opposite directions
+        
+        param direction: turn direction, 'left' or 'right' or -1/1
+        type direction: str or int
+        param speed: turn speed (0-100)
+        type speed: int
+        '''
+        speed = constrain(speed, 0, 100)
+        
+        # Normalize direction input
+        if direction == 'left' or direction == -1:
+            # Left turn: left motor backward, right motor forward
+            self.set_motor_speed(1, -speed)  # left motor backward
+            self.set_motor_speed(2, -speed)   # right motor forward
+        elif direction == 'right' or direction == 1:
+            # Right turn: left motor forward, right motor backward
+            self.set_motor_speed(1, speed)   # left motor forward
+            self.set_motor_speed(2, speed)  # right motor backward
+        else:
+            raise ValueError("direction must be 'left', 'right', -1, or 1")
+
     def stop(self):
         '''
         Execute twice to make sure it stops
