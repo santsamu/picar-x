@@ -18,22 +18,75 @@ def constrain(x: Union[int, float], min_val: Union[int, float], max_val: Union[i
     """
     return max(min_val, min(max_val, x))
 
+
+class PicarxConstants:
+    """Configuration constants for PiCar-X hardware and behavior."""
+    
+    # === HARDWARE CONFIGURATION ===
+    CONFIG_PATH = '/opt/picar-x/picar-x.conf'
+    
+    # Motor control constants
+    MOTOR_SPEED_DIVISOR = 2
+    MOTOR_SPEED_OFFSET = 50
+    MOTOR_STOP_ITERATIONS = 2
+    MOTOR_STOP_DELAY = 0.002
+    
+    # PWM configuration
+    PWM_PERIOD = 4095
+    PWM_PRESCALER = 10
+    PWM_TIMEOUT = 0.02
+    
+    # Servo angle limits
+    SERVO_LIMITS = {
+        'direction': {'min': -30, 'max': 30},
+        'cam_pan': {'min': -90, 'max': 90},
+        'cam_tilt': {'min': -35, 'max': 65}
+    }
+    
+    # Default sensor reference values
+    DEFAULT_LINE_REFERENCE = [1000, 1000, 1000]
+    DEFAULT_CLIFF_REFERENCE = [500, 500, 500]
+    
+    # Default turn calibration values
+    DEFAULT_TURN_TIMES = {
+        'tank_turn_360': 4.0,
+        'pivot_turn_360': 8.0
+    }
+    
+    DEFAULT_TURN_SPEEDS = {
+        'tank_turn_calibration': 50,
+        'pivot_turn_calibration': 50
+    }
+    
+    # Hardware initialization delays
+    MCU_RESET_DELAY = 0.2
+    
+    # Motor indices (for validation)
+    VALID_MOTOR_INDICES = [1, 2]
+    VALID_DIRECTION_VALUES = [1, -1]
+    
+    # Turn direction mappings
+    VALID_TURN_DIRECTIONS = ['left', 'right', -1, 1]
+    
+    # Speed and angle constraints
+    SPEED_MIN = 0
+    SPEED_MAX = 100
+    FULL_CIRCLE_DEGREES = 360.0
+
 class Picarx(object):
-    CONFIG = '/opt/picar-x/picar-x.conf'
-
-    DEFAULT_LINE_REF = [1000, 1000, 1000]
-    DEFAULT_CLIFF_REF = [500, 500, 500]
-
-    DIR_MIN = -30
-    DIR_MAX = 30
-    CAM_PAN_MIN = -90
-    CAM_PAN_MAX = 90
-    CAM_TILT_MIN = -35
-    CAM_TILT_MAX = 65
-
-    PERIOD = 4095
-    PRESCALER = 10
-    TIMEOUT = 0.02
+    # Legacy constants for backward compatibility
+    CONFIG = PicarxConstants.CONFIG_PATH
+    DEFAULT_LINE_REF = PicarxConstants.DEFAULT_LINE_REFERENCE
+    DEFAULT_CLIFF_REF = PicarxConstants.DEFAULT_CLIFF_REFERENCE
+    DIR_MIN = PicarxConstants.SERVO_LIMITS['direction']['min']
+    DIR_MAX = PicarxConstants.SERVO_LIMITS['direction']['max']
+    CAM_PAN_MIN = PicarxConstants.SERVO_LIMITS['cam_pan']['min']
+    CAM_PAN_MAX = PicarxConstants.SERVO_LIMITS['cam_pan']['max']
+    CAM_TILT_MIN = PicarxConstants.SERVO_LIMITS['cam_tilt']['min']
+    CAM_TILT_MAX = PicarxConstants.SERVO_LIMITS['cam_tilt']['max']
+    PERIOD = PicarxConstants.PWM_PERIOD
+    PRESCALER = PicarxConstants.PWM_PRESCALER
+    TIMEOUT = PicarxConstants.PWM_TIMEOUT
 
     # servo_pins: camera_pan_servo, camera_tilt_servo, direction_servo
     # motor_pins: left_swicth, right_swicth, left_pwm, right_pwm
@@ -56,10 +109,13 @@ class Picarx(object):
             ultrasonic_pins: List of ultrasonic sensor pins [trigger, echo]
             config: Path to configuration file
         """
+        
+        # Initialize constants for easy access
+        self.constants = PicarxConstants()
 
         # reset robot_hat
         utils.reset_mcu()
-        time.sleep(0.2)
+        time.sleep(self.constants.MCU_RESET_DELAY)
 
         # --------- config_file ---------
         self.config_file = fileDB(config, 777, os.getlogin())
@@ -125,14 +181,14 @@ class Picarx(object):
             RuntimeError: If motor control fails
         """
         # Validate motor index
-        if motor not in [1, 2]:
-            raise ValueError(f"Motor index must be 1 or 2, got {motor}")
+        if motor not in self.constants.VALID_MOTOR_INDICES:
+            raise ValueError(f"Motor index must be one of {self.constants.VALID_MOTOR_INDICES}, got {motor}")
         
         # Validate and constrain speed
         if not isinstance(speed, (int, float)):
             raise TypeError(f"Speed must be a number, got {type(speed)}")
         
-        speed = constrain(speed, -100, 100)
+        speed = constrain(speed, -self.constants.SPEED_MAX, self.constants.SPEED_MAX)
         motor_idx = motor - 1
         
         try:
@@ -142,9 +198,9 @@ class Picarx(object):
                 direction = -1 * self.cali_dir_value[motor_idx]
             speed = abs(speed)
             
-            # Convert speed to PWM range
+            # Convert speed to PWM range using constants
             if speed != 0:
-                speed = int(speed / 2) + 50
+                speed = int(speed / self.constants.MOTOR_SPEED_DIVISOR) + self.constants.MOTOR_SPEED_OFFSET
             speed = speed - self.cali_speed_value[motor_idx]
             
             # Apply motor control
@@ -182,11 +238,11 @@ class Picarx(object):
         Raises:
             ValueError: If motor index or value is invalid
         """
-        # Validate inputs
-        if motor not in [1, 2]:
-            raise ValueError(f"Motor index must be 1 or 2, got {motor}")
-        if value not in [1, -1]:
-            raise ValueError(f"Direction value must be 1 or -1, got {value}")
+        # Validate inputs using constants
+        if motor not in self.constants.VALID_MOTOR_INDICES:
+            raise ValueError(f"Motor index must be one of {self.constants.VALID_MOTOR_INDICES}, got {motor}")
+        if value not in self.constants.VALID_DIRECTION_VALUES:
+            raise ValueError(f"Direction value must be one of {self.constants.VALID_DIRECTION_VALUES}, got {value}")
         
         motor_idx = motor - 1
         self.cali_dir_value[motor_idx] = value
@@ -240,7 +296,10 @@ class Picarx(object):
         Raises:
             TypeError: If value is not a number
         """
-        validated_angle = self._validate_angle(value, self.DIR_MIN, self.DIR_MAX, "Direction angle")
+        validated_angle = self._validate_angle(value, 
+                                              self.constants.SERVO_LIMITS['direction']['min'], 
+                                              self.constants.SERVO_LIMITS['direction']['max'], 
+                                              "Direction angle")
         self.dir_current_angle = validated_angle
         angle_value = self.dir_current_angle + self.dir_cali_val
         self.dir_servo_pin.angle(angle_value)
@@ -264,7 +323,10 @@ class Picarx(object):
         Raises:
             TypeError: If value is not a number
         """
-        validated_angle = self._validate_angle(value, self.CAM_PAN_MIN, self.CAM_PAN_MAX, "Camera pan angle")
+        validated_angle = self._validate_angle(value, 
+                                              self.constants.SERVO_LIMITS['cam_pan']['min'], 
+                                              self.constants.SERVO_LIMITS['cam_pan']['max'], 
+                                              "Camera pan angle")
         self.cam_pan.angle(-1 * (validated_angle + -1 * self.cam_pan_cali_val))
 
     def set_cam_tilt_angle(self, value: Union[int, float]) -> None:
@@ -276,7 +338,10 @@ class Picarx(object):
         Raises:
             TypeError: If value is not a number
         """
-        validated_angle = self._validate_angle(value, self.CAM_TILT_MIN, self.CAM_TILT_MAX, "Camera tilt angle")
+        validated_angle = self._validate_angle(value, 
+                                              self.constants.SERVO_LIMITS['cam_tilt']['min'], 
+                                              self.constants.SERVO_LIMITS['cam_tilt']['max'], 
+                                              "Camera tilt angle")
         self.cam_tilt.angle(-1 * (validated_angle + -1 * self.cam_tilt_cali_val))
 
     # ===================================================================
@@ -319,14 +384,14 @@ class Picarx(object):
         if speed < 0:
             raise ValueError(f"Forward speed must be non-negative, got {speed}")
         
-        speed = constrain(speed, 0, 100)
+        speed = constrain(speed, self.constants.SPEED_MIN, self.constants.SPEED_MAX)
         current_angle = self.dir_current_angle
         
         if current_angle != 0:
             abs_current_angle = abs(current_angle)
-            if abs_current_angle > self.DIR_MAX:
-                abs_current_angle = self.DIR_MAX
-            power_scale = (100 - abs_current_angle) / 100.0
+            if abs_current_angle > self.constants.SERVO_LIMITS['direction']['max']:
+                abs_current_angle = self.constants.SERVO_LIMITS['direction']['max']
+            power_scale = (self.constants.SPEED_MAX - abs_current_angle) / self.constants.SPEED_MAX
             if (current_angle / abs_current_angle) > 0:
                 self.set_motor_speed(1, int(speed * power_scale))
                 self.set_motor_speed(2, -speed) 
@@ -349,15 +414,14 @@ class Picarx(object):
             ValueError: If direction is not valid
             TypeError: If speed or angle are not numbers
         """
-        # Validate direction
-        valid_directions = ['left', 'right', -1, 1]
-        if direction not in valid_directions:
-            raise ValueError(f"Direction must be one of {valid_directions}, got {direction}")
+        # Validate direction using constants
+        if direction not in self.constants.VALID_TURN_DIRECTIONS:
+            raise ValueError(f"Direction must be one of {self.constants.VALID_TURN_DIRECTIONS}, got {direction}")
         
         # Validate speed
         if not isinstance(speed, (int, float)):
             raise TypeError(f"Speed must be a number, got {type(speed)}")
-        speed = constrain(speed, 0, 100)
+        speed = constrain(speed, self.constants.SPEED_MIN, self.constants.SPEED_MAX)
         
         # Validate angle if provided
         if angle is not None:
@@ -377,14 +441,16 @@ class Picarx(object):
         # If angle is specified, calculate timing and auto-stop
         if angle is not None:
             try:
-                # Get calibrated 360° time and speed
-                calibrated_360_time = float(self.config_file.get("tank_turn_360_time", default_value=4.0))
-                calibrated_speed = float(self.config_file.get("tank_turn_calibration_speed", default_value=50))
+                # Get calibrated 360° time and speed using constants
+                calibrated_360_time = float(self.config_file.get("tank_turn_360_time", 
+                                                               default_value=self.constants.DEFAULT_TURN_TIMES['tank_turn_360']))
+                calibrated_speed = float(self.config_file.get("tank_turn_calibration_speed", 
+                                                            default_value=self.constants.DEFAULT_TURN_SPEEDS['tank_turn_calibration']))
                 
                 # Calculate time needed for the requested angle
                 # Scale by speed difference (inversely proportional to speed)
                 speed_scale = calibrated_speed / speed if speed > 0 else 1.0
-                turn_time = (abs(angle) / 360.0) * calibrated_360_time * speed_scale
+                turn_time = (abs(angle) / self.constants.FULL_CIRCLE_DEGREES) * calibrated_360_time * speed_scale
                 
                 # Execute the turn with timing
                 time.sleep(turn_time)
@@ -459,12 +525,12 @@ class Picarx(object):
         """Stop all motors immediately.
         
         Note:
-            Executes twice to ensure reliable stopping.
+            Executes multiple times with delays to ensure reliable stopping.
         """
-        for _ in range(2):
+        for _ in range(self.constants.MOTOR_STOP_ITERATIONS):
             self.motor_speed_pins[0].pulse_width_percent(0)
             self.motor_speed_pins[1].pulse_width_percent(0)
-            time.sleep(0.002)
+            time.sleep(self.constants.MOTOR_STOP_DELAY)
 
     # ===================================================================
     # SENSOR METHODS
