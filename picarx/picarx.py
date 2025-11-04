@@ -614,11 +614,69 @@ class Picarx(object):
     # UTILITY METHODS
     # ===================================================================
 
-    def reset(self):
-        self.stop()
-        self.set_dir_servo_angle(0)
-        self.set_cam_tilt_angle(0)
-        self.set_cam_pan_angle(0)
+    def __enter__(self):
+        """Context manager entry - returns self for 'with' statement.
+        
+        Returns:
+            Self for use in with statement
+            
+        Example:
+            with Picarx() as px:
+                px.forward(50)
+                time.sleep(1)
+                # Automatically stops and resets on exit
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures safe cleanup.
+        
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred  
+            exc_tb: Exception traceback if an exception occurred
+            
+        Returns:
+            False to allow exceptions to propagate
+            
+        Note:
+            Always stops motors and resets servos for safety, even on exceptions.
+        """
+        try:
+            self.stop()
+            self.reset()
+        except Exception as cleanup_error:
+            # Log cleanup error but don't mask the original exception
+            print(f"Warning: Cleanup error during context exit: {cleanup_error}")
+        
+        # Return False to let any original exceptions propagate
+        return False
+
+    def reset(self) -> None:
+        """Reset robot to safe neutral state.
+        
+        Stops all motors and returns all servos to neutral positions.
+        This method is automatically called when using context manager.
+        
+        Raises:
+            RuntimeError: If reset operations fail
+        """
+        try:
+            # Stop all motors first for safety
+            self.stop()
+            
+            # Reset all servos to neutral positions
+            self.set_dir_servo_angle(0)
+            self.set_cam_tilt_angle(0) 
+            self.set_cam_pan_angle(0)
+            
+        except Exception as e:
+            # Ensure motors are stopped even if servo reset fails
+            try:
+                self.stop()
+            except:
+                pass  # If stop also fails, we've done our best
+            raise RuntimeError(f"Robot reset failed: {e}")
 
 if __name__ == "__main__":
     px = Picarx()
