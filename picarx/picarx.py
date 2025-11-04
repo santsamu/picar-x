@@ -2,12 +2,20 @@ from robot_hat import Pin, ADC, PWM, Servo, fileDB
 from robot_hat import Grayscale_Module, Ultrasonic, utils
 import time
 import os
+from typing import List, Union, Optional
 
 
-def constrain(x, min_val, max_val):
-    '''
-    Constrains value to be within a range.
-    '''
+def constrain(x: Union[int, float], min_val: Union[int, float], max_val: Union[int, float]) -> Union[int, float]:
+    """Constrains value to be within a range.
+    
+    Args:
+        x: Value to constrain
+        min_val: Minimum allowed value
+        max_val: Maximum allowed value
+        
+    Returns:
+        Constrained value between min_val and max_val
+    """
     return max(min_val, min(max_val, x))
 
 class Picarx(object):
@@ -33,12 +41,21 @@ class Picarx(object):
     # ultrasonic_pins: trig, echo2
     # config: path of config file
     def __init__(self, 
-                servo_pins:list=['P0', 'P1', 'P2'], 
-                motor_pins:list=['D4', 'D5', 'P13', 'P12'],
-                grayscale_pins:list=['A0', 'A1', 'A2'],
-                ultrasonic_pins:list=['D2','D3'],
-                config:str=CONFIG,
-                ):
+                servo_pins: List[str] = ['P0', 'P1', 'P2'], 
+                motor_pins: List[str] = ['D4', 'D5', 'P13', 'P12'],
+                grayscale_pins: List[str] = ['A0', 'A1', 'A2'],
+                ultrasonic_pins: List[str] = ['D2','D3'],
+                config: str = CONFIG,
+                ) -> None:
+        """Initialize PiCar-X robot with hardware configuration.
+        
+        Args:
+            servo_pins: List of servo pin names [camera_pan, camera_tilt, direction]
+            motor_pins: List of motor pin names [left_switch, right_switch, left_pwm, right_pwm]
+            grayscale_pins: List of grayscale sensor ADC channels
+            ultrasonic_pins: List of ultrasonic sensor pins [trigger, echo]
+            config: Path to configuration file
+        """
 
         # reset robot_hat
         utils.reset_mcu()
@@ -92,14 +109,20 @@ class Picarx(object):
         trig, echo= ultrasonic_pins
         self.ultrasonic = Ultrasonic(Pin(trig), Pin(echo, mode=Pin.IN, pull=Pin.PULL_DOWN))
         
-    def set_motor_speed(self, motor, speed):
-        ''' set motor speed
+    # ===================================================================
+    # MOTOR CONTROL METHODS
+    # ===================================================================
         
-        param motor: motor index, 1 means left motor, 2 means right motor
-        type motor: int
-        param speed: speed
-        type speed: int      
-        '''
+    def set_motor_speed(self, motor: int, speed: int) -> None:
+        """Set motor speed with direction control.
+        
+        Args:
+            motor: Motor index (1=left motor, 2=right motor)
+            speed: Motor speed (-100 to 100, negative=reverse)
+            
+        Raises:
+            IndexError: If motor index is not 1 or 2
+        """
         speed = constrain(speed, -100, 100)
         motor -= 1
         if speed >= 0:
@@ -127,14 +150,17 @@ class Picarx(object):
             self.cali_speed_value[0] = abs(self.cali_speed_value)
             self.cali_speed_value[1] = 0
 
-    def motor_direction_calibrate(self, motor, value):
-        ''' set motor direction calibration value
+    # ===================================================================
+    # MOTOR CALIBRATION METHODS
+    # ===================================================================
+
+    def motor_direction_calibrate(self, motor: int, value: int) -> None:
+        """Set motor direction calibration value.
         
-        param motor: motor index, 1 means left motor, 2 means right motor
-        type motor: int
-        param value: speed
-        type value: int
-        '''      
+        Args:
+            motor: Motor index (1=left motor, 2=right motor)
+            value: Direction calibration (1=normal, -1=reversed)
+        """      
         motor -= 1
         if value == 1:
             self.cali_dir_value[motor] = 1
@@ -142,12 +168,21 @@ class Picarx(object):
             self.cali_dir_value[motor] = -1
         self.config_file.set("picarx_dir_motor", self.cali_dir_value)
 
+    # ===================================================================
+    # SERVO CONTROL AND CALIBRATION METHODS
+    # ===================================================================
+
     def dir_servo_calibrate(self, value):
         self.dir_cali_val = value
         self.config_file.set("picarx_dir_servo", "%s"%value)
         self.dir_servo_pin.angle(value)
 
-    def set_dir_servo_angle(self, value):
+    def set_dir_servo_angle(self, value: Union[int, float]) -> None:
+        """Set direction servo angle within safe limits.
+        
+        Args:
+            value: Desired angle in degrees (constrained to -30 to 30)
+        """
         self.dir_current_angle = constrain(value, self.DIR_MIN, self.DIR_MAX)
         angle_value  = self.dir_current_angle + self.dir_cali_val
         self.dir_servo_pin.angle(angle_value)
@@ -162,13 +197,27 @@ class Picarx(object):
         self.config_file.set("picarx_cam_tilt_servo", "%s"%value)
         self.cam_tilt.angle(value)
 
-    def set_cam_pan_angle(self, value):
+    def set_cam_pan_angle(self, value: Union[int, float]) -> None:
+        """Set camera pan servo angle within safe limits.
+        
+        Args:
+            value: Desired pan angle in degrees (constrained to -90 to 90)
+        """
         value = constrain(value, self.CAM_PAN_MIN, self.CAM_PAN_MAX)
         self.cam_pan.angle(-1*(value + -1*self.cam_pan_cali_val))
 
-    def set_cam_tilt_angle(self,value):
+    def set_cam_tilt_angle(self, value: Union[int, float]) -> None:
+        """Set camera tilt servo angle within safe limits.
+        
+        Args:
+            value: Desired tilt angle in degrees (constrained to -35 to 65)
+        """
         value = constrain(value, self.CAM_TILT_MIN, self.CAM_TILT_MAX)
         self.cam_tilt.angle(-1*(value + -1*self.cam_tilt_cali_val))
+
+    # ===================================================================
+    # MOVEMENT CONTROL METHODS
+    # ===================================================================
 
     def set_power(self, speed):
         self.set_motor_speed(1, speed)
@@ -191,7 +240,12 @@ class Picarx(object):
             self.set_motor_speed(1, -1*speed)
             self.set_motor_speed(2, speed)  
 
-    def forward(self, speed):
+    def forward(self, speed: int) -> None:
+        """Move forward with differential steering based on current direction angle.
+        
+        Args:
+            speed: Forward speed (0-100)
+        """
         current_angle = self.dir_current_angle
         if current_angle != 0:
             abs_current_angle = abs(current_angle)
@@ -208,17 +262,17 @@ class Picarx(object):
             self.set_motor_speed(1, speed)
             self.set_motor_speed(2, -1*speed)                  
 
-    def tank_turn(self, direction, speed, angle=None):
-        '''
-        Tank turn - rotate in place by driving motors in opposite directions
+    def tank_turn(self, direction: Union[str, int], speed: int, angle: Optional[float] = None) -> None:
+        """Tank turn - rotate in place by driving motors in opposite directions.
         
-        param direction: turn direction, 'left' or 'right' or -1/1
-        type direction: str or int
-        param speed: turn speed (0-100)
-        type speed: int
-        param angle: optional angle in degrees (uses calibrated timing)
-        type angle: float or None
-        '''
+        Args:
+            direction: Turn direction ('left', 'right', -1, or 1)
+            speed: Turn speed (0-100)
+            angle: Optional angle in degrees (uses calibrated timing for auto-stop)
+            
+        Raises:
+            ValueError: If direction is not valid
+        """
         speed = constrain(speed, 0, 100)
         
         # Normalize direction input
@@ -248,15 +302,13 @@ class Picarx(object):
             time.sleep(turn_time)
             self.stop()
     
-    def tank_turn_angle(self, angle, speed=50):
-        '''
-        Convenience method for angle-based tank turns
+    def tank_turn_angle(self, angle: float, speed: int = 50) -> None:
+        """Convenience method for angle-based tank turns.
         
-        param angle: angle in degrees (positive = right, negative = left)
-        type angle: float
-        param speed: turn speed (0-100)
-        type speed: int
-        '''
+        Args:
+            angle: Angle in degrees (positive=right, negative=left)
+            speed: Turn speed (0-100), defaults to 50
+        """
         direction = 'right' if angle >= 0 else 'left'
         self.tank_turn(direction, speed, abs(angle))
 
@@ -312,16 +364,27 @@ class Picarx(object):
         direction = 'right' if angle >= 0 else 'left'
         self.pivot_turn(direction, speed, abs(angle))
 
-    def stop(self):
-        '''
-        Execute twice to make sure it stops
-        '''
+    def stop(self) -> None:
+        """Stop all motors immediately.
+        
+        Note:
+            Executes twice to ensure reliable stopping.
+        """
         for _ in range(2):
             self.motor_speed_pins[0].pulse_width_percent(0)
             self.motor_speed_pins[1].pulse_width_percent(0)
             time.sleep(0.002)
 
-    def get_distance(self):
+    # ===================================================================
+    # SENSOR METHODS
+    # ===================================================================
+
+    def get_distance(self) -> float:
+        """Get distance measurement from ultrasonic sensor.
+        
+        Returns:
+            Distance in centimeters, or -1 if measurement failed
+        """
         return self.ultrasonic.read()
 
     def set_grayscale_reference(self, value):
@@ -332,10 +395,23 @@ class Picarx(object):
         else:
             raise ValueError("grayscale reference must be a 1*3 list")
 
-    def get_grayscale_data(self):
+    def get_grayscale_data(self) -> List[float]:
+        """Get current grayscale sensor readings.
+        
+        Returns:
+            List of 3 grayscale values [left, center, right]
+        """
         return list.copy(self.grayscale.read())
 
-    def get_line_status(self,gm_val_list):
+    def get_line_status(self, gm_val_list: List[float]) -> Union[str, int]:
+        """Determine line following status from grayscale readings.
+        
+        Args:
+            gm_val_list: List of 3 grayscale sensor values
+            
+        Returns:
+            Line status indicator (implementation dependent)
+        """
         return self.grayscale.read_status(gm_val_list)
 
     def set_line_reference(self, value):
@@ -353,6 +429,10 @@ class Picarx(object):
             self.config_file.set("cliff_reference", self.cliff_reference)
         else:
             raise ValueError("grayscale reference must be a 1*3 list")
+
+    # ===================================================================
+    # UTILITY METHODS
+    # ===================================================================
 
     def reset(self):
         self.stop()
