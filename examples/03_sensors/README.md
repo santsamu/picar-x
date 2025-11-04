@@ -23,35 +23,24 @@ In this section, you'll learn:
 - Read all sensor values
 - Understand sensor ranges
 - Display real-time data
+- Sensor calibration basics
 - **Difficulty**: ⭐☆☆
 
-### **02_grayscale_detection.py** ⚫⚪
-**Line following basics**
-- Detect black lines on white surface
-- Calibrate sensor thresholds
-- Basic line detection logic
+### **02_obstacle_avoidance.py** 🚧
+**Autonomous navigation**
+- Ultrasonic distance measurement
+- Obstacle detection and avoidance
+- Smart navigation algorithms
+- Emergency stop mechanisms
 - **Difficulty**: ⭐⭐☆
 
-### **03_ultrasonic_distance.py** 📏
-**Obstacle detection**
-- Measure distances to objects
-- Set detection thresholds
-- Handle measurement errors
-- **Difficulty**: ⭐⭐☆
-
-### **04_cliff_detection.py** ⛰️
+### **03_cliff_detection.py** ⛰️
 **Safety first - avoid falling**
 - Detect table edges and cliffs
-- Emergency stop mechanisms
+- Grayscale sensor utilization
 - Safe navigation patterns
+- Multi-sensor safety systems
 - **Difficulty**: ⭐⭐☆
-
-### **05_sensor_combination.py** 🎛️
-**Multi-sensor fusion**
-- Combine multiple sensor inputs
-- Priority and decision logic
-- Robust environmental awareness
-- **Difficulty**: ⭐⭐⭐
 
 ## 🚀 **Getting Started**
 
@@ -64,7 +53,7 @@ For optimal learning, prepare:
 
 ### **Run Your First Sensor Test**
 ```bash
-cd /picar-x/examples_new/03_sensors
+cd examples/03_sensors
 python3 01_sensor_reading.py
 ```
 

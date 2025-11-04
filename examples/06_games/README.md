@@ -19,46 +19,32 @@ In this section, you'll learn:
 
 ## 📝 **Examples in This Section**
 
-### **01_remote_control.py** 🎮
-**Your robot, your commands**
-- Keyboard/gamepad control interface
-- Real-time movement response
-- Multiple control modes
+### **01_game_basics.py** 🎮
+**Foundation of robot gaming**
+- Basic game structure and loops
+- User input handling
+- Score tracking and feedback
 - **Difficulty**: ⭐⭐☆
 
-### **02_follow_me.py** 👥
-**Robot pet simulation**
-- Color-based person tracking
-- Maintain following distance
-- Lost person recovery behavior
+### **02_bull_fight.py** �
+**Classic matador challenge**
+- React to moving targets
+- Charging and dodging behaviors
+- Competitive timing elements
 - **Difficulty**: ⭐⭐☆
 
-### **03_robot_soccer.py** ⚽
-**Competitive ball game**
-- Ball detection and tracking
-- Goal-oriented behavior
-- Multiplayer support
+### **03_racing_minecart.py** �️
+**High-speed track racing**
+- Speed optimization challenges
+- Track following and navigation
+- Performance timing and scoring
 - **Difficulty**: ⭐⭐⭐
 
-### **04_maze_runner.py** 🏃‍♂️
-**Speed navigation challenge**
-- Timed maze solving
-- Optimal path finding
-- Performance scoring
-- **Difficulty**: ⭐⭐⭐
-
-### **05_battle_bots.py** ⚔️
-**Robot vs robot competition**
-- Sumo-style pushing contest
-- Tag and chase games
-- Territory control
-- **Difficulty**: ⭐⭐⭐
-
-### **06_treasure_hunt.py** 🗺️
+### **04_treasure_hunt.py** 🗺️
 **Adventure and exploration**
 - Multi-objective treasure finding
 - Clue following and puzzle solving
-- Team cooperation modes
+- Strategic search patterns
 - **Difficulty**: ⭐⭐⭐
 
 ## 🚀 **Getting Started**
@@ -73,8 +59,8 @@ Create engaging play areas:
 
 ### **Your First Game**
 ```bash
-cd /picar-x/examples_new/06_games
-python3 01_remote_control.py
+cd /picar-x/examples/06_games
+python3 01_game_basics.py
 ```
 
 ## 💡 **Key Concepts**

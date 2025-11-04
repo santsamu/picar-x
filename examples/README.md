@@ -16,6 +16,19 @@ cd ../examples/09_testing
 python3 01_hardware_validation.py
 ```
 
+## 🔐 AI Integration Setup (Optional)
+
+For AI-powered examples (07_ai_integration), you'll need an OpenAI API key:
+
+```bash
+# Option 1: Environment variable (recommended)
+export OPENAI_API_KEY="your-api-key-here"
+
+# Option 2: Create a keys file
+cp keys.py.example keys.py
+# Edit keys.py with your actual API key from https://openai.com
+```
+
 ## �️ Complete Learning Path
 
 ### 🌱 **Beginner Level** - Master the Fundamentals

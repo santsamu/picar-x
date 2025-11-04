@@ -23,6 +23,7 @@ In this section, you'll learn:
 - Forward and backward motion
 - Simple left and right turns
 - Speed control basics
+- Movement pattern fundamentals
 - **Difficulty**: ⭐☆☆
 
 ### **02_speed_control.py** ⚡
@@ -30,24 +31,8 @@ In this section, you'll learn:
 - Variable speed control
 - Acceleration and deceleration
 - Timing-based movement
+- Precise positioning techniques
 - **Difficulty**: ⭐⭐☆
-
-### **03_turn_angles.py** 🔄
-**Precise turning control**
-- 90-degree turns
-- Custom angle turns
-- Pivot vs. tank turns
-- **Difficulty**: ⭐⭐☆
-
-### **04_movement_patterns.py** 🎨
-**Create complex movements**
-- Square and circle patterns
-- Figure-8 movements
-- Custom choreography
-- **Difficulty**: ⭐⭐⭐
-
-### **05_navigation_basics.py** 🧭
-**Simple navigation concepts**
 - Point-to-point movement
 - Dead reckoning
 - Position tracking
@@ -63,7 +48,7 @@ In this section, you'll learn:
 
 ### **Run Your First Movement**
 ```bash
-cd /picar-x/examples_new/02_movement
+cd /picar-x/examples/02_movement
 python3 01_basic_movement.py
 ```
 

@@ -36,18 +36,6 @@ In this section, you'll learn:
 - Monitor battery levels
 - Check sensor status
 - **Difficulty**: ⭐☆☆
-
-### **04_coordinate_system.py** 🧭
-**Understand robot orientation**
-- Learn forward/backward/left/right
-- Understand angles and directions
-- Practice with simple movements
-- **Difficulty**: ⭐⭐☆
-
-### **05_error_handling.py** ⚠️
-**Handle problems gracefully**
-- Catch and handle exceptions
-- Recover from common errors
 - Debug connection issues
 - **Difficulty**: ⭐⭐☆
 
@@ -56,7 +44,7 @@ In this section, you'll learn:
 ### **Run Your First Example**
 ```bash
 # Make sure you're in the right directory
-cd /picar-x/examples_new/01_basics
+cd /picar-x/examples/01_basics
 
 # Run the hello world example
 python3 01_hello_world.py
@@ -99,7 +87,7 @@ with Picarx() as px:
 **"Module not found" error:**
 ```bash
 # Check if you're in the right directory
-pwd  # Should show: /picar-x/examples_new/01_basics
+pwd  # Should show: /picar-x/examples/01_basics
 
 # Check if picarx is installed
 python3 -c "import picarx; print('OK')"

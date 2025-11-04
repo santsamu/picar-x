@@ -19,46 +19,25 @@ In this section, you'll learn:
 
 ## 📝 **Examples in This Section**
 
-### **01_line_following.py** 🛤️
-**Classic autonomous behavior**
-- Follow black lines using grayscale sensors
-- PID control for smooth tracking
-- Handle curves and intersections
+### **01_behavior_basics.py** 🤖
+**Foundation of intelligent behaviors**
+- State machine fundamentals
+- Basic behavior patterns
+- Sensor-driven decisions
 - **Difficulty**: ⭐⭐☆
 
-### **02_obstacle_avoidance.py** 🚧
-**Navigate around obstacles**
-- Ultrasonic sensor-based navigation
-- Random walk and wall following
-- Recovery from stuck situations
-- **Difficulty**: ⭐⭐☆
-
-### **03_wall_following.py** 🏢
-**Systematic exploration**
-- Keep constant distance from walls
-- Left-hand rule navigation
-- Maze solving potential
+### **02_face_tracking.py** �
+**Follow human faces**
+- Face detection using vision
+- Camera servo control for tracking
+- Real-time visual pursuit
 - **Difficulty**: ⭐⭐⭐
 
-### **04_object_hunting.py** 🎯
-**Visual object seeking**
-- Find objects by color/shape
-- Approach and investigate targets
-- Multi-modal sensing integration
-- **Difficulty**: ⭐⭐⭐
-
-### **05_patrol_behavior.py** 🚨
-**Security and monitoring**
-- Predefined route following
-- Anomaly detection and alerts
-- Return-to-base functionality
-- **Difficulty**: ⭐⭐⭐
-
-### **06_treasure_hunt.py** 💎
-**Complex multi-objective behavior**
-- Search for multiple targets
-- Memory and mapping
-- Strategic decision making
+### **03_behavior_coordination.py** 🎯
+**Complex multi-behavior system**
+- Coordinate multiple behaviors
+- Priority-based behavior selection
+- Advanced state management
 - **Difficulty**: ⭐⭐⭐
 
 ## 🚀 **Getting Started**
@@ -73,8 +52,8 @@ Create a rich test environment:
 
 ### **Run Your First Behavior**
 ```bash
-cd /picar-x/examples_new/05_behaviors
-python3 01_line_following.py
+cd /picar-x/examples/05_behaviors
+python3 01_behavior_basics.py
 ```
 
 ## 💡 **Key Concepts**

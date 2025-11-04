@@ -19,46 +19,32 @@ In this section, you'll learn:
 
 ## 📝 **Examples in This Section**
 
-### **01_camera_preview.py** 📷
+### **01_camera_basics.py** 📷
 **First look through robot's eyes**
 - Initialize camera system
 - Display live video feed
-- Basic camera controls
+- Basic camera controls and setup
 - **Difficulty**: ⭐☆☆
 
-### **02_image_capture.py** 📸
-**Capture and save images**
-- Take photos programmatically
-- Save images with timestamps
-- Adjust camera settings
-- **Difficulty**: ⭐☆☆
-
-### **03_color_detection.py** 🎨
-**Find objects by color**
-- HSV color space conversion
-- Color range detection
-- Real-time color tracking
+### **02_computer_vision.py** 🎨
+**Computer vision fundamentals**
+- Image processing techniques
+- Object detection basics
+- Visual recognition patterns
 - **Difficulty**: ⭐⭐☆
 
-### **04_object_tracking.py** 🎯
-**Follow objects with camera**
-- Pan/tilt servo control
-- Center objects in view
-- Smooth tracking algorithms
-- **Difficulty**: ⭐⭐⭐
-
-### **05_visual_navigation.py** 🧭
-**Navigate using vision**
-- Visual landmark detection
-- Line following with camera
-- Obstacle recognition
-- **Difficulty**: ⭐⭐⭐
-
-### **06_video_recording.py** 🎬
+### **03_video_recording.py** �
 **Record robot's adventures**
 - Video recording capabilities
+- Save footage with timestamps
 - Real-time video streaming
-- Remote monitoring setup
+- **Difficulty**: ⭐⭐☆
+
+### **04_photo_car.py** 📸
+**Automated photography robot**
+- Take photos automatically
+- Camera trigger mechanisms
+- Image capture sequences
 - **Difficulty**: ⭐⭐☆
 
 ## 🚀 **Getting Started**
@@ -66,8 +52,8 @@ In this section, you'll learn:
 ### **Camera Setup Check**
 ```bash
 # Test camera connectivity
-cd /picar-x/examples_new/04_vision
-python3 01_camera_preview.py
+cd /picar-x/examples/04_vision
+python3 01_camera_basics.py
 ```
 
 ### **Required Libraries**

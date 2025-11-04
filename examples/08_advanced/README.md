@@ -66,7 +66,7 @@ Before starting advanced examples, ensure you have:
 
 ### Quick Start - Advanced Integration
 ```bash
-cd /home/sam/picar-x/examples_new/08_advanced
+cd /picar-x/examples/08_advanced
 python3 01_advanced_integration.py
 ```
 

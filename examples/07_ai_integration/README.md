@@ -98,14 +98,26 @@ sudo apt install portaudio19-dev python3-pyaudio
 pip install openai
 
 # Create API key file (optional):
-echo "openai_key = 'your-api-key-here'" > /home/sam/picar-x/gpt_examples/keys.py
+```bash
+# Option 1: Environment variable (most secure)
+export OPENAI_API_KEY="your-api-key-here"
+
+# Option 2: Create local keys file in current directory
+echo "openai_key = 'your-api-key-here'" > ./keys.py
+
+# Option 3: Create keys file in examples directory
+echo "openai_key = 'your-api-key-here'" > ../keys.py
+
+# Option 4: Copy and modify the example file
+cp ../keys.py.example ./keys.py
+# Then edit keys.py with your actual API key
 ```
 
 ## 🎮 Getting Started
 
 ### Quick Start - AI Basics
 ```bash
-cd /home/sam/picar-x/examples_new/07_ai_integration
+cd /picar-x/examples/07_ai_integration
 python3 01_ai_basics.py
 ```
 
@@ -301,8 +313,8 @@ GOOGLE_CLOUD_KEY=your_google_key_here
 
 ### **Your First AI Example**
 ```bash
-cd /picar-x/examples_new/07_ai_integration
-python3 01_voice_control.py
+cd /picar-x/examples/07_ai_integration
+python3 01_ai_basics.py
 ```
 
 ## 💡 **Key Concepts**
