@@ -121,25 +121,43 @@ class Picarx(object):
             speed: Motor speed (-100 to 100, negative=reverse)
             
         Raises:
-            IndexError: If motor index is not 1 or 2
+            ValueError: If motor index is not 1 or 2
+            RuntimeError: If motor control fails
         """
+        # Validate motor index
+        if motor not in [1, 2]:
+            raise ValueError(f"Motor index must be 1 or 2, got {motor}")
+        
+        # Validate and constrain speed
+        if not isinstance(speed, (int, float)):
+            raise TypeError(f"Speed must be a number, got {type(speed)}")
+        
         speed = constrain(speed, -100, 100)
-        motor -= 1
-        if speed >= 0:
-            direction = 1 * self.cali_dir_value[motor]
-        elif speed < 0:
-            direction = -1 * self.cali_dir_value[motor]
-        speed = abs(speed)
-        # print(f"direction: {direction}, speed: {speed}")
-        if speed != 0:
-            speed = int(speed /2 ) + 50
-        speed = speed - self.cali_speed_value[motor]
-        if direction < 0:
-            self.motor_direction_pins[motor].high()
-            self.motor_speed_pins[motor].pulse_width_percent(speed)
-        else:
-            self.motor_direction_pins[motor].low()
-            self.motor_speed_pins[motor].pulse_width_percent(speed)
+        motor_idx = motor - 1
+        
+        try:
+            if speed >= 0:
+                direction = 1 * self.cali_dir_value[motor_idx]
+            elif speed < 0:
+                direction = -1 * self.cali_dir_value[motor_idx]
+            speed = abs(speed)
+            
+            # Convert speed to PWM range
+            if speed != 0:
+                speed = int(speed / 2) + 50
+            speed = speed - self.cali_speed_value[motor_idx]
+            
+            # Apply motor control
+            if direction < 0:
+                self.motor_direction_pins[motor_idx].high()
+                self.motor_speed_pins[motor_idx].pulse_width_percent(speed)
+            else:
+                self.motor_direction_pins[motor_idx].low()
+                self.motor_speed_pins[motor_idx].pulse_width_percent(speed)
+                
+        except Exception as e:
+            self.stop()  # Safety: stop motors on any error
+            raise RuntimeError(f"Motor control failed for motor {motor}: {e}")
 
     def motor_speed_calibration(self, value):
         self.cali_speed_value = value
@@ -160,21 +178,57 @@ class Picarx(object):
         Args:
             motor: Motor index (1=left motor, 2=right motor)
             value: Direction calibration (1=normal, -1=reversed)
-        """      
-        motor -= 1
-        if value == 1:
-            self.cali_dir_value[motor] = 1
-        elif value == -1:
-            self.cali_dir_value[motor] = -1
+            
+        Raises:
+            ValueError: If motor index or value is invalid
+        """
+        # Validate inputs
+        if motor not in [1, 2]:
+            raise ValueError(f"Motor index must be 1 or 2, got {motor}")
+        if value not in [1, -1]:
+            raise ValueError(f"Direction value must be 1 or -1, got {value}")
+        
+        motor_idx = motor - 1
+        self.cali_dir_value[motor_idx] = value
         self.config_file.set("picarx_dir_motor", self.cali_dir_value)
 
     # ===================================================================
     # SERVO CONTROL AND CALIBRATION METHODS
     # ===================================================================
+    
+    def _validate_angle(self, angle: Union[int, float], min_val: float, max_val: float, name: str) -> float:
+        """Validate and constrain angle values.
+        
+        Args:
+            angle: Angle to validate
+            min_val: Minimum allowed angle
+            max_val: Maximum allowed angle
+            name: Name of the angle parameter for error messages
+            
+        Returns:
+            Validated and constrained angle
+            
+        Raises:
+            TypeError: If angle is not a number
+        """
+        if not isinstance(angle, (int, float)):
+            raise TypeError(f"{name} must be a number, got {type(angle)}")
+        return constrain(angle, min_val, max_val)
 
-    def dir_servo_calibrate(self, value):
+    def dir_servo_calibrate(self, value: Union[int, float]) -> None:
+        """Calibrate direction servo offset.
+        
+        Args:
+            value: Calibration offset value
+            
+        Raises:
+            TypeError: If value is not a number
+        """
+        if not isinstance(value, (int, float)):
+            raise TypeError(f"Calibration value must be a number, got {type(value)}")
+        
         self.dir_cali_val = value
-        self.config_file.set("picarx_dir_servo", "%s"%value)
+        self.config_file.set("picarx_dir_servo", str(value))
         self.dir_servo_pin.angle(value)
 
     def set_dir_servo_angle(self, value: Union[int, float]) -> None:
@@ -182,9 +236,13 @@ class Picarx(object):
         
         Args:
             value: Desired angle in degrees (constrained to -30 to 30)
+            
+        Raises:
+            TypeError: If value is not a number
         """
-        self.dir_current_angle = constrain(value, self.DIR_MIN, self.DIR_MAX)
-        angle_value  = self.dir_current_angle + self.dir_cali_val
+        validated_angle = self._validate_angle(value, self.DIR_MIN, self.DIR_MAX, "Direction angle")
+        self.dir_current_angle = validated_angle
+        angle_value = self.dir_current_angle + self.dir_cali_val
         self.dir_servo_pin.angle(angle_value)
 
     def cam_pan_servo_calibrate(self, value):
@@ -202,18 +260,24 @@ class Picarx(object):
         
         Args:
             value: Desired pan angle in degrees (constrained to -90 to 90)
+            
+        Raises:
+            TypeError: If value is not a number
         """
-        value = constrain(value, self.CAM_PAN_MIN, self.CAM_PAN_MAX)
-        self.cam_pan.angle(-1*(value + -1*self.cam_pan_cali_val))
+        validated_angle = self._validate_angle(value, self.CAM_PAN_MIN, self.CAM_PAN_MAX, "Camera pan angle")
+        self.cam_pan.angle(-1 * (validated_angle + -1 * self.cam_pan_cali_val))
 
     def set_cam_tilt_angle(self, value: Union[int, float]) -> None:
         """Set camera tilt servo angle within safe limits.
         
         Args:
             value: Desired tilt angle in degrees (constrained to -35 to 65)
+            
+        Raises:
+            TypeError: If value is not a number
         """
-        value = constrain(value, self.CAM_TILT_MIN, self.CAM_TILT_MAX)
-        self.cam_tilt.angle(-1*(value + -1*self.cam_tilt_cali_val))
+        validated_angle = self._validate_angle(value, self.CAM_TILT_MIN, self.CAM_TILT_MAX, "Camera tilt angle")
+        self.cam_tilt.angle(-1 * (validated_angle + -1 * self.cam_tilt_cali_val))
 
     # ===================================================================
     # MOVEMENT CONTROL METHODS
@@ -245,22 +309,33 @@ class Picarx(object):
         
         Args:
             speed: Forward speed (0-100)
+            
+        Raises:
+            TypeError: If speed is not a number
+            ValueError: If speed is negative
         """
+        if not isinstance(speed, (int, float)):
+            raise TypeError(f"Speed must be a number, got {type(speed)}")
+        if speed < 0:
+            raise ValueError(f"Forward speed must be non-negative, got {speed}")
+        
+        speed = constrain(speed, 0, 100)
         current_angle = self.dir_current_angle
+        
         if current_angle != 0:
             abs_current_angle = abs(current_angle)
             if abs_current_angle > self.DIR_MAX:
                 abs_current_angle = self.DIR_MAX
             power_scale = (100 - abs_current_angle) / 100.0
             if (current_angle / abs_current_angle) > 0:
-                self.set_motor_speed(1, 1*speed * power_scale)
+                self.set_motor_speed(1, int(speed * power_scale))
                 self.set_motor_speed(2, -speed) 
             else:
                 self.set_motor_speed(1, speed)
-                self.set_motor_speed(2, -1*speed * power_scale)
+                self.set_motor_speed(2, int(-speed * power_scale))
         else:
             self.set_motor_speed(1, speed)
-            self.set_motor_speed(2, -1*speed)                  
+            self.set_motor_speed(2, -speed)                  
 
     def tank_turn(self, direction: Union[str, int], speed: int, angle: Optional[float] = None) -> None:
         """Tank turn - rotate in place by driving motors in opposite directions.
@@ -272,8 +347,22 @@ class Picarx(object):
             
         Raises:
             ValueError: If direction is not valid
+            TypeError: If speed or angle are not numbers
         """
+        # Validate direction
+        valid_directions = ['left', 'right', -1, 1]
+        if direction not in valid_directions:
+            raise ValueError(f"Direction must be one of {valid_directions}, got {direction}")
+        
+        # Validate speed
+        if not isinstance(speed, (int, float)):
+            raise TypeError(f"Speed must be a number, got {type(speed)}")
         speed = constrain(speed, 0, 100)
+        
+        # Validate angle if provided
+        if angle is not None:
+            if not isinstance(angle, (int, float)):
+                raise TypeError(f"Angle must be a number, got {type(angle)}")
         
         # Normalize direction input
         if direction == 'left' or direction == -1:
@@ -284,23 +373,25 @@ class Picarx(object):
             # Right turn: left motor forward, right motor backward (relative to car forward)
             self.set_motor_speed(1, speed)   # left motor forward  
             self.set_motor_speed(2, speed)  # right motor backward (opposite to left)
-        else:
-            raise ValueError("direction must be 'left', 'right', -1, or 1")
         
         # If angle is specified, calculate timing and auto-stop
         if angle is not None:
-            # Get calibrated 360° time and speed
-            calibrated_360_time = float(self.config_file.get("tank_turn_360_time", default_value=4.0))
-            calibrated_speed = float(self.config_file.get("tank_turn_calibration_speed", default_value=50))
-            
-            # Calculate time needed for the requested angle
-            # Scale by speed difference (inversely proportional to speed)
-            speed_scale = calibrated_speed / speed if speed > 0 else 1.0
-            turn_time = (abs(angle) / 360.0) * calibrated_360_time * speed_scale
-            
-            # Execute the turn with timing
-            time.sleep(turn_time)
-            self.stop()
+            try:
+                # Get calibrated 360° time and speed
+                calibrated_360_time = float(self.config_file.get("tank_turn_360_time", default_value=4.0))
+                calibrated_speed = float(self.config_file.get("tank_turn_calibration_speed", default_value=50))
+                
+                # Calculate time needed for the requested angle
+                # Scale by speed difference (inversely proportional to speed)
+                speed_scale = calibrated_speed / speed if speed > 0 else 1.0
+                turn_time = (abs(angle) / 360.0) * calibrated_360_time * speed_scale
+                
+                # Execute the turn with timing
+                time.sleep(turn_time)
+                self.stop()
+            except Exception as e:
+                self.stop()  # Safety: ensure motors stop on error
+                raise RuntimeError(f"Tank turn with angle failed: {e}")
     
     def tank_turn_angle(self, angle: float, speed: int = 50) -> None:
         """Convenience method for angle-based tank turns.
@@ -384,16 +475,39 @@ class Picarx(object):
         
         Returns:
             Distance in centimeters, or -1 if measurement failed
+            
+        Raises:
+            RuntimeError: If sensor reading fails consistently
         """
-        return self.ultrasonic.read()
+        try:
+            distance = self.ultrasonic.read()
+            return distance if distance is not None else -1
+        except Exception as e:
+            raise RuntimeError(f"Ultrasonic sensor reading failed: {e}")
 
-    def set_grayscale_reference(self, value):
-        if isinstance(value, list) and len(value) == 3:
-            self.line_reference = value
-            self.grayscale.reference(self.line_reference)
-            self.config_file.set("line_reference", self.line_reference)
-        else:
-            raise ValueError("grayscale reference must be a 1*3 list")
+    def set_grayscale_reference(self, value: List[float]) -> None:
+        """Set grayscale sensor reference values.
+        
+        Args:
+            value: List of 3 reference values [left, center, right]
+            
+        Raises:
+            ValueError: If value is not a list of 3 numbers
+            TypeError: If list elements are not numbers
+        """
+        if not isinstance(value, list):
+            raise TypeError(f"Grayscale reference must be a list, got {type(value)}")
+        if len(value) != 3:
+            raise ValueError(f"Grayscale reference must have 3 values, got {len(value)}")
+        
+        # Validate all elements are numbers
+        for i, val in enumerate(value):
+            if not isinstance(val, (int, float)):
+                raise TypeError(f"Grayscale reference[{i}] must be a number, got {type(val)}")
+        
+        self.line_reference = value
+        self.grayscale.reference(self.line_reference)
+        self.config_file.set("line_reference", str(self.line_reference))
 
     def get_grayscale_data(self) -> List[float]:
         """Get current grayscale sensor readings.
