@@ -258,7 +258,7 @@ Ready for interactive fun? Try:
 
 1. **Start simple** - Master basic behaviors before combining
 2. **Tune parameters** - Spend time optimizing for your environment  
-3. **Debug visually** - Use LEDs/sounds to show internal state
+3. **Debug visually** - Use sounds/movement to show internal state
 4. **Plan recovery** - Always have escape mechanisms
 5. **Test thoroughly** - Behaviors need extensive real-world testing
 6. **Log everything** - Record sensor data for offline analysis

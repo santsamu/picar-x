@@ -5,7 +5,6 @@
 In this section, you'll learn:
 - ✅ How to import and initialize PiCar-X
 - ✅ Basic safety patterns with context managers
-- ✅ Simple LED control and status indicators
 - ✅ Understanding the robot's coordinate system
 - ✅ Basic error handling and troubleshooting
 
@@ -20,7 +19,7 @@ In this section, you'll learn:
 ### **01_hello_world.py** 🌍
 **Your first PiCar-X program!**
 - Initialize the robot safely
-- Blink LEDs to show it's working
+- Test basic robot functions
 - Learn the basic code structure
 - **Difficulty**: ⭐☆☆
 
@@ -64,9 +63,9 @@ python3 01_hello_world.py
 ```
 
 ### **What to Expect**
-- LEDs should blink in sequence
 - Terminal output showing status
 - Robot should respond to basic commands
+- Servo movements during testing
 - No movement (just initialization)
 
 ## 💡 **Key Concepts**
@@ -85,8 +84,9 @@ from picarx import Picarx
 
 # Safe initialization
 with Picarx() as px:
-    # Control LEDs
-    px.set_led_color(255, 0, 0)  # Red
+    # Test basic functions
+    px.forward(30)
+    px.stop()
     
     # Basic info
     print(f"Robot initialized: {px}")
@@ -114,7 +114,7 @@ whoami  # Should NOT show 'root'
 python3 ../../setup/diagnostics/hardware_check.py
 ```
 
-**LEDs not working:**
+**Hardware not responding:**
 - Check power connections
 - Verify hardware setup completed
 - Run calibration again: `../../setup/first_time_setup.py`
@@ -124,7 +124,7 @@ python3 ../../setup/diagnostics/hardware_check.py
 You're ready for the next section when you can:
 - [ ] Run `01_hello_world.py` without errors
 - [ ] Understand context manager syntax
-- [ ] Control LED colors
+- [ ] Test basic robot functions
 - [ ] Handle basic errors gracefully
 - [ ] Explain the robot's coordinate system
 

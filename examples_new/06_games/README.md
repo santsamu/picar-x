@@ -296,7 +296,7 @@ Ready for cutting-edge AI? Try:
 
 1. **Start simple** - Get basic gameplay working first
 2. **Playtest early** - Test with real people frequently
-3. **Visual feedback** - LEDs and sounds enhance experience
+3. **Visual feedback** - Sounds and movement enhance experience
 4. **Error recovery** - Games should handle failures gracefully
 5. **Performance first** - Smooth gameplay beats fancy graphics
 6. **Safety boundaries** - Keep robots in safe play areas
