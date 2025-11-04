@@ -501,7 +501,6 @@ if __name__ == "__main__":
         print("💡 Check camera and audio system setup!")
     
     print("\n🏴‍☠️ Treasure hunt game complete!")
-        px.forward(80)
 
 
 def main():

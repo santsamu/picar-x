@@ -22,6 +22,7 @@ import json
 import random
 import threading
 import queue
+import os
 from datetime import datetime
 
 
@@ -216,21 +217,36 @@ def gpt_conversation_demo():
     print("Have natural conversations with your intelligent robot!")
     print()
     
-    # Try to get API key
+    # Try to get API key from multiple locations
     api_key = None
-    try:
-        with open('/home/sam/picar-x/gpt_examples/keys.py', 'r') as f:
-            content = f.read()
-            if 'openai_key' in content:
-                # Extract key from file
-                exec(content)
-                api_key = openai_key if 'openai_key' in locals() else None
-    except:
-        pass
+    key_locations = [
+        '/home/sam/picar-x/gpt_examples/keys.py',
+        './keys.py',
+        '../gpt_examples/keys.py'
+    ]
+    
+    for key_file in key_locations:
+        try:
+            with open(key_file, 'r') as f:
+                content = f.read()
+                if 'openai_key' in content:
+                    # Extract key from file
+                    exec(content)
+                    api_key = openai_key if 'openai_key' in locals() else None
+                    if api_key:
+                        break
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            print(f"⚠️ Error reading {key_file}: {e}")
+            continue
     
     if not api_key:
         print("💡 Note: Using demo mode with mock responses")
-        print("   To use real GPT, add your OpenAI API key to gpt_examples/keys.py")
+        print("   To use real GPT, add your OpenAI API key to:")
+        print("   - gpt_examples/keys.py (preferred)")
+        print("   - ./keys.py (local)")
+        print("   - Set OPENAI_API_KEY environment variable")
         input("Press Enter to continue with demo...")
     
     # Initialize GPT assistant

@@ -444,25 +444,3 @@ if __name__ == "__main__":
         print("💡 Make sure you have a line track ready for racing!")
     
     print("\n🏎️ Racing minecart game complete!")
-            gm_val_list = px.get_grayscale_data()
-            gm_state = get_status(gm_val_list)
-            print("gm_val_list: %s, %s"%(gm_val_list, gm_state))
-
-            if gm_state != "stop":
-                last_state = gm_state
-
-            if gm_state == 'forward':
-                px.set_dir_servo_angle(0)
-                px.forward(px_power) 
-            elif gm_state == 'left':
-                px.set_dir_servo_angle(offset)
-                px.forward(px_power) 
-            elif gm_state == 'right':
-                px.set_dir_servo_angle(-offset)
-                px.forward(px_power) 
-            else:
-                outHandle()
-    finally:
-        px.stop()
-        print("stop and exit")
-        sleep(0.1)
