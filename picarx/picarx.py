@@ -43,9 +43,9 @@ class PicarxConstants:
         'cam_tilt': {'min': -35, 'max': 65}
     }
     
-    # Default sensor reference values
-    DEFAULT_LINE_REFERENCE = [1000, 1000, 1000]
-    DEFAULT_CLIFF_REFERENCE = [500, 500, 500]
+    # Default sensor reference values (calibrated for typical lighting)
+    DEFAULT_LINE_REFERENCE = [500, 500, 500]  # Line detection threshold
+    DEFAULT_CLIFF_REFERENCE = [400, 400, 400]  # Cliff detection threshold
     
     # Default turn calibration values
     DEFAULT_TURN_TIMES = {
