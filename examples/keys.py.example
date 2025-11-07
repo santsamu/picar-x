@@ -1,0 +1,16 @@
+# OpenAI API Key Configuration
+# Replace 'your-api-key-here' with your actual OpenAI API key from https://openai.com
+
+openai_key = 'your-api-key-here'
+
+# Example:
+# openai_key = 'sk-proj-abcd1234...'
+
+# To get your API key:
+# 1. Visit https://platform.openai.com/api-keys
+# 2. Create a new API key
+# 3. Replace the value above
+# 4. Keep this file secure and never commit it to version control!
+
+# Note: You can also use environment variables instead:
+# export OPENAI_API_KEY="your-api-key-here"
