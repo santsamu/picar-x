@@ -147,23 +147,29 @@ def test_motor_response(px):
 
 def display_robot_configuration():
     """Display robot configuration and settings"""
+    from picarx import PicarxConstants
+    constants = PicarxConstants()
+    
     print("⚙️ Robot Configuration:")
     
-    # This would typically read from configuration files
-    # For now, display typical settings
     print("   Motor settings:")
-    print("      Max speed: 100")
-    print("      Direction: Normal")
+    print(f"      Speed range: {constants.SPEED_MIN}-{constants.SPEED_MAX}")
+    print(f"      Speed divisor: {constants.MOTOR_SPEED_DIVISOR}")
+    print(f"      Speed offset: {constants.MOTOR_SPEED_OFFSET}")
     
     print("   Servo settings:")
-    print("      Steering range: ±30°")
-    print("      Camera pan range: ±90°")
-    print("      Camera tilt range: ±30°")
+    print(f"      Steering range: {constants.SERVO_LIMITS['direction']['min']}° to {constants.SERVO_LIMITS['direction']['max']}°")
+    print(f"      Camera pan range: {constants.SERVO_LIMITS['cam_pan']['min']}° to {constants.SERVO_LIMITS['cam_pan']['max']}°")
+    print(f"      Camera tilt range: {constants.SERVO_LIMITS['cam_tilt']['min']}° to {constants.SERVO_LIMITS['cam_tilt']['max']}°")
     
     print("   Sensor settings:")
-    print("      Grayscale sensors: 3 channels")
-    print("      Distance sensor: Ultrasonic")
-    print("      Update rate: 10 Hz")
+    print(f"      Default line reference: {constants.DEFAULT_LINE_REFERENCE}")
+    print(f"      Default cliff reference: {constants.DEFAULT_CLIFF_REFERENCE}")
+    print(f"      PWM period: {constants.PWM_PERIOD}")
+    
+    print("   Turn calibration:")
+    print(f"      Tank turn 360°: {constants.DEFAULT_TURN_TIMES['tank_turn_360']}s")
+    print(f"      Pivot turn 360°: {constants.DEFAULT_TURN_TIMES['pivot_turn_360']}s")
 
 
 def continuous_monitoring(px, duration=10):
