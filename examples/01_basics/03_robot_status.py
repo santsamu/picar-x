@@ -52,16 +52,15 @@ def test_sensor_readings(px):
     try:
         # Test grayscale sensors
         print("   Grayscale sensors:")
-        left = px.get_grayscale_left()
-        center = px.get_grayscale_center()
-        right = px.get_grayscale_right()
+        grayscale_readings = px.get_grayscale_data()
+        left, center, right = grayscale_readings
         
         print(f"      Left: {left:3.1f}")
         print(f"      Center: {center:3.1f}")
         print(f"      Right: {right:3.1f}")
         
-        # Check if readings are reasonable
-        if 0 <= left <= 100 and 0 <= center <= 100 and 0 <= right <= 100:
+        # Check if readings are reasonable (grayscale values are typically 0-4095 for ADC)
+        if all(0 <= reading <= 4095 for reading in grayscale_readings):
             print("   ✅ Grayscale sensors working normally")
         else:
             print("   ⚠️ Unusual grayscale sensor readings")
@@ -178,9 +177,8 @@ def continuous_monitoring(px, duration=10):
         while time.time() - start_time < duration:
             # Read sensors
             distance = px.get_distance()
-            grayscale_avg = (px.get_grayscale_left() + 
-                           px.get_grayscale_center() + 
-                           px.get_grayscale_right()) / 3
+            grayscale_readings = px.get_grayscale_data()
+            grayscale_avg = sum(grayscale_readings) / len(grayscale_readings)
             
             # Display status with timestamp
             elapsed = time.time() - start_time
