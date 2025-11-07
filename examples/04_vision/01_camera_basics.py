@@ -6,7 +6,7 @@ This example introduces you to the camera system on your PiCar-X robot.
 Learn the fundamentals of computer vision and camera control.
 
 Learn to:
-- Start and stop the camera system
+- Start and stop the camera system multiple times
 - Display camera feed locally and on web
 - Take photos programmatically
 - Control camera settings
@@ -41,83 +41,15 @@ def start_camera(vflip=False, hflip=False):
         print("✅ Camera started - Web: http://[robot-ip]:9000/mjpg")
 
 
-def stop_camera_and_exit():
-    """Stop camera and exit program"""
+def stop_camera():
+    """Stop camera safely"""
     print("🔄 Stopping camera...")
     try:
         Vilib.camera_close()
         print("✅ Camera stopped")
-    except:
-        pass
-    
-    print("\n📹 Camera demo complete!")
-    print("💡 Run the program again to try another demo")
-    sys.exit(0)
-
-
-def safe_camera_start(vflip=False, hflip=False, retries=1):
-    """Start camera - simple and reliable"""
-    global _camera_active, _camera_session_count
-    
-    # Check if this is not the first camera session
-    if _camera_session_count > 0:
-        print("⚠️ Camera has been used before in this session.")
-        print("� Due to vilib limitations, camera may be unstable.")
-        print("💡 Recommended: Restart the program for best results.")
-        proceed = input("Continue anyway? (y/n): ").strip().lower()
-        if proceed != 'y':
-            return False
-    
-    try:
-        print("🔄 Starting camera...")
-        
-        # Simple cleanup - just close if needed
-        if _camera_active:
-            Vilib.camera_close()
-            time.sleep(2)
-        
-        # Start camera
-        Vilib.camera_start(vflip=vflip, hflip=hflip)
-        Vilib.display(local=True, web=True)
-        time.sleep(1)
-        
-        _camera_active = True
-        _camera_session_count += 1
-        
-        # Get IP for web display
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-            print(f"✅ Camera started - Web: http://{local_ip}:9000/mjpg")
-        except:
-            print("✅ Camera started - Web: http://[robot-ip]:9000/mjpg")
-        
-        return True
-        
     except Exception as e:
-        print(f"❌ Camera start failed: {e}")
-        print("� Try restarting the program if this error persists")
-        return False
-
-
-def safe_camera_stop():
-    """Stop camera safely"""
-    global _camera_active
-    
-    if _camera_active:
-        try:
-            print("🔄 Stopping camera...")
-            Vilib.camera_close()
-            _camera_active = False
-            time.sleep(1)
-            print("✅ Camera stopped")
-        except Exception as e:
-            print(f"ℹ️ Camera stop note: {e}")
-            _camera_active = False
-    else:
-        print("ℹ️ Camera already stopped")
+        print(f"ℹ️ Camera stop note: {e}")
+    time.sleep(0.5)
 
 
 def explain_camera_system():
@@ -169,14 +101,14 @@ def basic_camera_test():
         print("💡 Check camera connection and permissions")
     
     finally:
-        stop_camera_and_exit()
+        stop_camera()
+        print("\n📹 Camera demo complete!")
 
 
 def camera_settings_demo():
     """Demonstrate different camera settings"""
     print("⚙️ Camera Settings Demo")
     print("Testing different camera orientations and settings")
-    print("Note: This demo will show all orientations, then exit")
     print()
     
     settings_tests = [
@@ -190,16 +122,12 @@ def camera_settings_demo():
         for i, settings in enumerate(settings_tests, 1):
             print(f"📹 Test {i}/4: {settings['name']}")
             
-            if i == 1:
-                # First test - start camera
-                start_camera(vflip=settings['vflip'], hflip=settings['hflip'])
-            else:
-                # Subsequent tests - just change display settings
-                print("🔄 Changing camera orientation...")
-                Vilib.camera_close()
+            if i > 1:
+                # Stop previous camera before starting new one
+                stop_camera()
                 time.sleep(1)
-                Vilib.camera_start(vflip=settings['vflip'], hflip=settings['hflip'])
-                Vilib.display(local=True, web=True)
+            
+            start_camera(vflip=settings['vflip'], hflip=settings['hflip'])
             
             print(f"   Settings: vflip={settings['vflip']}, hflip={settings['hflip']}")
             print("   Check your web browser to see the orientation")
@@ -213,7 +141,8 @@ def camera_settings_demo():
         print(f"❌ Error with settings: {e}")
     
     finally:
-        stop_camera_and_exit()
+        stop_camera()
+        print("\n⚙️ Camera settings demo complete!")
 
 
 def take_photo_demo():
@@ -269,7 +198,8 @@ def take_photo_demo():
         print(f"❌ Camera error: {e}")
     
     finally:
-        stop_camera_and_exit()
+        stop_camera()
+        print("\n📸 Photo demo complete!")
 
 
 def camera_with_servos():
@@ -340,7 +270,8 @@ def camera_with_servos():
         print(f"❌ Error: {e}")
     
     finally:
-        stop_camera_and_exit()
+        stop_camera()
+        print("\n🤖 Camera servo demo complete!")
 
 
 def camera_diagnostics():
@@ -377,9 +308,14 @@ def camera_diagnostics():
         else:
             print("   ⚠️ Photo file not found")
         
-        print("\nTest 4: Camera information")
-        print("   📹 Camera session active and stable")
-        print("   🎥 All core functions operational")
+        print("\nTest 4: Camera restart test")
+        print("   🔄 Stopping camera...")
+        stop_camera()
+        time.sleep(1)
+        
+        print("   🔄 Restarting camera...")
+        start_camera()
+        print("   ✅ Camera restart: SUCCESS")
         
         print("\n🔧 Camera diagnostics complete!")
         print("✅ All tests passed successfully")
@@ -392,7 +328,8 @@ def camera_diagnostics():
         print("   • Run 'libcamera-hello' to test camera directly")
     
     finally:
-        stop_camera_and_exit()
+        stop_camera()
+        print("\n🔧 Camera diagnostics complete!")
 
 
 def main():
@@ -403,41 +340,43 @@ def main():
     
     explain_camera_system()
     
-    print("Choose a camera demonstration:")
-    print("1. 📹 Basic camera test")
-    print("2. ⚙️ Camera settings demo")
-    print("3. 📸 Photo taking demo")
-    print("4. 🤖 Camera with servo control")
-    print("5. 🔧 Camera diagnostics")
-    print("6. ❓ Explain camera system")
-    print("7. 🚪 Exit")
-    
-    try:
-        choice = input("\nEnter choice (1-7): ").strip()
+    while True:
+        print("\nChoose a camera demonstration:")
+        print("1. 📹 Basic camera test")
+        print("2. ⚙️ Camera settings demo")
+        print("3. 📸 Photo taking demo")
+        print("4. 🤖 Camera with servo control")
+        print("5. 🔧 Camera diagnostics")
+        print("6. ❓ Explain camera system")
+        print("7. 🚪 Exit")
         
-        if choice == '1':
-            basic_camera_test()
-        elif choice == '2':
-            camera_settings_demo()
-        elif choice == '3':
-            take_photo_demo()
-        elif choice == '4':
-            camera_with_servos()
-        elif choice == '5':
-            camera_diagnostics()
-        elif choice == '6':
-            explain_camera_system()
-            print("\n📹 Camera tutorial complete!")
-        elif choice == '7':
-            print("👋 Happy filming!")
-        else:
-            print("⚠️ Invalid choice. Please enter 1-7.")
+        try:
+            choice = input("\nEnter choice (1-7): ").strip()
             
-    except KeyboardInterrupt:
-        print("\n👋 Camera tutorial interrupted!")
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        print("💡 Check camera connection and permissions")
+            if choice == '1':
+                basic_camera_test()
+            elif choice == '2':
+                camera_settings_demo()
+            elif choice == '3':
+                take_photo_demo()
+            elif choice == '4':
+                camera_with_servos()
+            elif choice == '5':
+                camera_diagnostics()
+            elif choice == '6':
+                explain_camera_system()
+            elif choice == '7':
+                print("👋 Happy filming!")
+                break
+            else:
+                print("⚠️ Invalid choice. Please enter 1-7.")
+                
+        except KeyboardInterrupt:
+            print("\n👋 Camera tutorial interrupted!")
+            break
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            print("💡 Check camera connection and permissions")
 
 
 if __name__ == "__main__":
