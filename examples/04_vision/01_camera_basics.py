@@ -51,6 +51,16 @@ def basic_camera_test():
     print()
     
     try:
+        # Ensure any previous camera instance is closed with thorough cleanup
+        try:
+            print("🔄 Stopping any existing camera...")
+            Vilib.camera_close()
+            time.sleep(2)  # Allow more time for complete cleanup
+            print("✅ Previous camera instance cleaned up")
+        except:
+            print("ℹ️ No previous camera to clean up")
+        
+        print("🔄 Starting new camera instance...")
         # Start camera with basic settings
         Vilib.camera_start(vflip=False, hflip=False)
         Vilib.display(local=True, web=True)
@@ -141,6 +151,13 @@ def take_photo_demo():
     print()
     
     try:
+        # Ensure any previous camera instance is closed
+        try:
+            Vilib.camera_close()
+            time.sleep(0.5)  # Allow time for cleanup
+        except:
+            pass  # No camera to close
+        
         # Start camera
         Vilib.camera_start(vflip=False, hflip=False)
         Vilib.display(local=True, web=True)
@@ -191,6 +208,13 @@ def camera_with_servos():
     print()
     
     try:
+        # Ensure any previous camera instance is closed
+        try:
+            Vilib.camera_close()
+            time.sleep(0.5)  # Allow time for cleanup
+        except:
+            pass  # No camera to close
+        
         # Start camera
         Vilib.camera_start(vflip=False, hflip=False)
         Vilib.display(local=True, web=True)
