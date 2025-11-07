@@ -202,9 +202,10 @@ def exploration_behavior(px):
 
 def line_following_behavior(px):
     """Line following behavior"""
-    left = px.get_grayscale_left()
-    center = px.get_grayscale_center()
-    right = px.get_grayscale_right()
+    gray_data = px.get_grayscale_data()
+    left = gray_data[0]
+    center = gray_data[1]
+    right = gray_data[2]
     
     # Check if any sensor detects a line
     if any(sensor < 40 for sensor in [left, center, right]):
@@ -458,9 +459,10 @@ def dynamic_behavior_switching():
                 
                 # Dynamic behavior activation logic
                 distance = px.get_distance()
-                left = px.get_grayscale_left()
-                center = px.get_grayscale_center()
-                right = px.get_grayscale_right()
+                gray_data = px.get_grayscale_data()
+                left = gray_data[0]
+                center = gray_data[1]
+                right = gray_data[2]
                 
                 # Obstacle avoidance activation
                 if distance > 0 and distance < 40:

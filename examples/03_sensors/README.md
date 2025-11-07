@@ -62,10 +62,11 @@ python3 01_sensor_reading.py
 ### **Grayscale Sensors**
 ```python
 with Picarx() as px:
-    # Read grayscale values (0-100)
-    left = px.get_grayscale_left()
-    center = px.get_grayscale_center() 
-    right = px.get_grayscale_right()
+    # Read grayscale values (0-100) 
+    gray_data = px.get_grayscale_data()  # Returns [left, center, right]
+    left = gray_data[0]
+    center = gray_data[1] 
+    right = gray_data[2]
     
     # Typical values:
     # White surface: 80-100

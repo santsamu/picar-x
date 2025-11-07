@@ -63,9 +63,10 @@ def simple_reactive_behavior():
             while True:
                 # Get sensor data
                 distance = px.get_distance()
-                left_gray = px.get_grayscale_left()
-                center_gray = px.get_grayscale_center()
-                right_gray = px.get_grayscale_right()
+                gray_data = px.get_grayscale_data()
+                left_gray = gray_data[0]
+                center_gray = gray_data[1]
+                right_gray = gray_data[2]
                 
                 # Simple reactive rules
                 if distance > 0 and distance < 15:
@@ -280,9 +281,10 @@ def curiosity_behavior():
                 
                 # Check environment
                 distance = px.get_distance()
-                left_gray = px.get_grayscale_left()
-                center_gray = px.get_grayscale_center()
-                right_gray = px.get_grayscale_right()
+                gray_data = px.get_grayscale_data()
+                left_gray = gray_data[0]
+                center_gray = gray_data[1]
+                right_gray = gray_data[2]
                 
                 exploration_time += 0.1
                 

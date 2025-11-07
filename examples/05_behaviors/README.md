@@ -80,9 +80,7 @@ elif line_detected:
 with Picarx() as px:
     # Combine multiple sensor inputs
     distance = px.get_distance()
-    line_sensors = [px.get_grayscale_left(), 
-                   px.get_grayscale_center(),
-                   px.get_grayscale_right()]
+    line_sensors = px.get_grayscale_data()  # Returns [left, center, right]
     
     # Decision making
     if distance < 20:  # Obstacle priority
