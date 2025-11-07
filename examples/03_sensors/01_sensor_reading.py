@@ -30,7 +30,7 @@ def explain_sensors():
     print("⚫⚪ Grayscale Sensors (3 sensors):")
     print("   • Left, Center, Right sensors")
     print("   • Detect light vs dark surfaces")
-    print("   • Range: 0-100 (0=dark, 100=bright)")
+    print("   • Range: 0-4095 (ADC values, 0=dark, 4095=bright)")
     print("   • Used for line following and cliff detection")
     print()
 
@@ -75,19 +75,18 @@ def test_grayscale_sensors():
     with Picarx() as px:
         try:
             while True:
-                left = px.get_grayscale_left()
-                center = px.get_grayscale_center()
-                right = px.get_grayscale_right()
+                grayscale_readings = px.get_grayscale_data()
+                left, center, right = grayscale_readings
                 
                 # Determine surface types
                 def classify_surface(value):
-                    if value > 80:
+                    if value > 1350:
                         return "⚪ Very bright"
-                    elif value > 60:
+                    elif value > 1100:
                         return "🔆 Bright"
-                    elif value > 40:
+                    elif value > 600:
                         return "🔅 Medium"
-                    elif value > 20:
+                    elif value > 200:
                         return "🔘 Dark"
                     else:
                         return "⚫ Very dark"
@@ -119,9 +118,8 @@ def combined_sensor_display():
                 
                 # Read all sensors
                 distance = px.get_distance()
-                left = px.get_grayscale_left()
-                center = px.get_grayscale_center()
-                right = px.get_grayscale_right()
+                grayscale_readings = px.get_grayscale_data()
+                left, center, right = grayscale_readings
                 
                 # Distance status
                 if distance < 0:
@@ -137,7 +135,7 @@ def combined_sensor_display():
                 avg_grayscale = (left + center + right) / 3
                 
                 # Line detection (simple)
-                line_detected = any(sensor < 30 for sensor in [left, center, right])
+                line_detected = any(sensor < 500 for sensor in [left, center, right])
                 line_status = "LINE" if line_detected else "----"
                 
                 print(f"📊 #{sample_count:4d} | Dist:{distance:6.1f}cm ({dist_status}) | "
@@ -175,13 +173,13 @@ def sensor_calibration_helper():
         print("1. Place robot on WHITE surface")
         input("Press Enter when ready...")
         
-        white_values = [px.get_grayscale_left(), px.get_grayscale_center(), px.get_grayscale_right()]
+        white_values = px.get_grayscale_data()
         print(f"   White surface: L{white_values[0]:.0f} C{white_values[1]:.0f} R{white_values[2]:.0f}")
         
         print("2. Place robot on BLACK surface (or black tape)")
         input("Press Enter when ready...")
         
-        black_values = [px.get_grayscale_left(), px.get_grayscale_center(), px.get_grayscale_right()]
+        black_values = px.get_grayscale_data()
         print(f"   Black surface: L{black_values[0]:.0f} C{black_values[1]:.0f} R{black_values[2]:.0f}")
         
         # Calculate thresholds
@@ -219,29 +217,28 @@ def interactive_sensor_explorer():
                 print("   → Sensor error or out of range")
             
             # Grayscale
-            left = px.get_grayscale_left()
-            center = px.get_grayscale_center()
-            right = px.get_grayscale_right()
+            grayscale_readings = px.get_grayscale_data()
+            left, center, right = grayscale_readings
             
             print(f"⚫⚪ Grayscale: Left={left:.1f}, Center={center:.1f}, Right={right:.1f}")
             
             # Analysis
-            if max(left, center, right) - min(left, center, right) > 20:
+            if max(left, center, right) - min(left, center, right) > 300:
                 print("   → Mixed surface detected")
-            elif all(val > 70 for val in [left, center, right]):
+            elif all(val > 1200 for val in [left, center, right]):
                 print("   → Very bright/white surface")
-            elif all(val < 30 for val in [left, center, right]):
+            elif all(val < 500 for val in [left, center, right]):
                 print("   → Very dark/black surface")
             else:
                 print("   → Uniform medium surface")
             
             # Line detection
-            if any(val < 30 for val in [left, center, right]):
-                if center < 30:
+            if any(val < 500 for val in [left, center, right]):
+                if center < 500:
                     print("   🎯 Line detected in CENTER")
-                elif left < 30:
+                elif left < 500:
                     print("   🎯 Line detected on LEFT")
-                elif right < 30:
+                elif right < 500:
                     print("   🎯 Line detected on RIGHT")
             
             next_action = input("\nPress Enter for new reading, or 'q' to quit: ").strip().lower()
