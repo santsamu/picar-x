@@ -68,13 +68,24 @@ class AIPersonality:
             "greeting": [
                 "Hello there! I'm ready for adventure!",
                 "Hi! What shall we explore today?",
-                "Greetings, human friend! How can I help?"
+                "Greetings, human friend! How can I help?",
+                "Hey! Nice to see you!",
+                "Welcome! I'm excited to work with you!",
+                "Oh, hello! Ready for some robotics fun?",
+                "Hi there! What can we do together today?",
+                "Greetings! I'm your friendly robot assistant!",
+                "Hello! Let's make something awesome happen!"
             ],
             "movement_ack": [
                 "Moving as requested!",
                 "On my way!",
                 "Let's go!",
-                "Roger that, captain!"
+                "Roger that, captain!",
+                "Here we go!",
+                "Movement initiated!",
+                "Off I go!",
+                "Time to move!",
+                "Executing command!"
             ],
             "confused": [
                 "I didn't quite understand that. Could you try again?",
@@ -84,14 +95,34 @@ class AIPersonality:
             "goodbye": [
                 "Goodbye! It was fun exploring with you!",
                 "See you later! Thanks for the adventure!",
-                "Until next time, my friend!"
+                "Until next time, my friend!",
+                "Farewell! Hope to see you again soon!",
+                "Bye for now! That was great!",
+                "Take care! Thanks for the interaction!",
+                "Catch you later! Stay awesome!",
+                "So long! It's been a pleasure!"
             ]
         }
     
     def get_response(self, category, context=""):
         """Get a personality-appropriate response"""
         if category in self.responses:
+            # Ensure proper randomization by using current time as additional entropy
+            import time
+            random.seed(int(time.time() * 1000) % 10000)
+            
             base_response = random.choice(self.responses[category])
+            
+            # Add personality touches based on interaction count for more variety
+            if category == "greeting":
+                if self.interaction_count == 0:
+                    # First greeting - be more welcoming
+                    if random.random() > 0.5:
+                        base_response = "Welcome! " + base_response
+                elif self.interaction_count > 3:
+                    # Been interacting a while - be more familiar
+                    prefixes = ["Again! ", "Back for more? ", "Hey again! "]
+                    base_response = random.choice(prefixes) + base_response
             
             # Add personality touches
             if self.personality_traits["playful"] > 0.7 and random.random() > 0.5:
@@ -99,6 +130,13 @@ class AIPersonality:
                     base_response += " Wheee!"
                 elif category == "greeting":
                     base_response += " Ready for some fun!"
+            
+            # Add mood-based variations
+            if self.mood == "happy" and random.random() > 0.6:
+                if category == "greeting":
+                    base_response += " I'm in a great mood today!"
+                elif category == "movement_ack":
+                    base_response += " This is exciting!"
             
             return base_response
         return "I understand!"
@@ -122,15 +160,30 @@ class VoiceController:
     
     def __init__(self):
         self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
         self.command_queue = queue.Queue()
         self.listening = False
+        self.microphone = None
         
-        # Calibrate microphone
-        print("🎤 Calibrating microphone for ambient noise...")
-        with self.microphone as source:
-            self.recognizer.adjust_for_ambient_noise(source)
-        print("✅ Microphone ready!")
+        # Try to initialize microphone with error handling
+        try:
+            # Try USB audio device first (index 0: USB PnP Sound Device)
+            try:
+                self.microphone = sr.Microphone(device_index=0)
+                print("🎤 Using USB PnP Sound Device (hw:2,0)")
+            except:
+                # Fall back to default microphone
+                self.microphone = sr.Microphone()
+                print("🎤 Using default audio device")
+                
+            print("🎤 Calibrating microphone for ambient noise...")
+            with self.microphone as source:
+                # Increase energy threshold for better noise filtering
+                self.recognizer.energy_threshold = 300
+                self.recognizer.adjust_for_ambient_noise(source, duration=1.0)
+            print("✅ Microphone ready!")
+        except Exception as e:
+            print(f"⚠️ Microphone initialization issue: {e}")
+            print("💡 Voice recognition will use fallback mode")
         
         # Command mappings
         self.command_map = {
@@ -147,6 +200,10 @@ class VoiceController:
     
     def listen_for_commands(self):
         """Background thread for continuous voice recognition"""
+        if not self.microphone:
+            print("⚠️ No microphone available for voice recognition")
+            return
+            
         while self.listening:
             try:
                 with self.microphone as source:
@@ -154,12 +211,21 @@ class VoiceController:
                     audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=3)
                 
                 # Recognize speech
-                text = self.recognizer.recognize_google(audio).lower()
-                command = self.parse_command(text)
-                
-                if command:
-                    self.command_queue.put((command, text))
-                    print(f"🎤 Heard: '{text}' -> Command: '{command}'")
+                try:
+                    text = self.recognizer.recognize_google(audio).lower()
+                    command = self.parse_command(text)
+                    
+                    if command:
+                        self.command_queue.put((command, text))
+                        print(f"🎤 Heard: '{text}' -> Command: '{command}'")
+                    else:
+                        print(f"🎤 Heard: '{text}' (no matching command)")
+                        
+                except sr.UnknownValueError:
+                    print("🎤 Audio captured but speech unclear - try speaking louder/clearer")
+                except sr.RequestError as e:
+                    print(f"🎤 Recognition service error: {e}")
+                    continue
                 
             except sr.WaitTimeoutError:
                 pass  # No speech detected, continue listening
@@ -185,11 +251,14 @@ class VoiceController:
     
     def start_listening(self):
         """Start voice recognition thread"""
+        if not self.microphone:
+            return False
         self.listening = True
         self.listen_thread = threading.Thread(target=self.listen_for_commands)
         self.listen_thread.daemon = True
         self.listen_thread.start()
         print("🎤 Voice recognition started!")
+        return True
     
     def stop_listening(self):
         """Stop voice recognition"""
@@ -206,6 +275,7 @@ def ai_voice_control():
     # Initialize components
     personality = AIPersonality()
     tts = TTS()
+    tts.lang("en-US")  # Set language for TTS
     
     # Try to initialize voice controller
     try:
@@ -223,21 +293,26 @@ def ai_voice_control():
         tts.say(greeting)
         
         if voice_available:
-            voice.start_listening()
-            print("\n🎤 Say commands like:")
-            print("   • 'Hello robot'")
-            print("   • 'Go forward'")
-            print("   • 'Turn left'")
-            print("   • 'Dance'")
-            print("   • 'Goodbye'")
-            print("\nPress Ctrl+C to exit")
-        else:
+            voice_started = voice.start_listening()
+            if voice_started:
+                print("\n🎤 Say commands like:")
+                print("   • 'Hello robot'")
+                print("   • 'Go forward'")
+                print("   • 'Turn left'")
+                print("   • 'Dance'")
+                print("   • 'Goodbye'")
+                print("\nPress Ctrl+C to exit")
+            else:
+                voice_available = False
+        
+        if not voice_available:
             print("\n💡 Voice demo simulated with random commands...")
             simulated_commands = ["hello", "forward", "left", "right", "dance", "status"]
         
         try:
             demo_start = time()
             command_count = 0
+            no_voice_timeout = 30  # Switch to simulation after 30 seconds of no voice
             
             while True:
                 if voice_available:
@@ -258,13 +333,19 @@ def ai_voice_control():
                         
                         personality.update_mood("successful_command")
                         command_count += 1
+                        demo_start = time()  # Reset timeout when we get commands
                         
                     except queue.Empty:
-                        pass  # No commands, continue
+                        # Check if we should switch to simulation mode
+                        if time() - demo_start > no_voice_timeout:
+                            print("\n💡 No voice commands detected - switching to simulation mode...")
+                            voice_available = False
+                            demo_start = time()
+                        continue
                 
                 else:
                     # Simulated demo mode
-                    if time() - demo_start > 5:
+                    if time() - demo_start > 3:
                         command = random.choice(simulated_commands)
                         print(f"🎤 Simulated command: '{command}'")
                         
@@ -275,7 +356,7 @@ def ai_voice_control():
                         demo_start = time()
                         command_count += 1
                         
-                        if command_count >= 6:
+                        if command_count >= 8:
                             goodbye = personality.get_response("goodbye")
                             print(f"🤖 Robot: {goodbye}")
                             tts.say(goodbye)
@@ -368,6 +449,7 @@ def ai_decision_tree():
     print("Watch the robot make intelligent decisions based on different scenarios!")
     
     tts = TTS()
+    tts.lang("en-US")  # Set language for TTS
     
     # Define decision scenarios
     scenarios = [
@@ -473,6 +555,7 @@ def ai_personality_showcase():
     }
     
     tts = TTS()
+    tts.lang("en-US")  # Set language for TTS
     
     with Picarx() as px:
         for name, personality in personalities.items():

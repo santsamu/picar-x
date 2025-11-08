@@ -33,6 +33,14 @@ class BehaviorCoordinator:
         self.coordination_mode = 'subsumption'  # 'subsumption', 'fusion', 'arbitration'
         self.running = False
         
+        # Obstacle avoidance state for persistent behavior
+        self.avoidance_state = {
+            'avoiding': False,
+            'avoid_direction': 0,
+            'avoid_start_time': 0,
+            'min_avoid_duration': 2.0  # Minimum time to maintain avoidance maneuver
+        }
+        
     def register_behavior(self, name, behavior_func, priority=1):
         """Register a behavior with its priority"""
         self.behaviors[name] = {
@@ -153,6 +161,52 @@ class BehaviorCoordinator:
         base_priority = self.behaviors[behavior_name]['priority']
         random_factor = random.random() * 0.5  # Add some variability
         return base_priority + random_factor
+    
+    def obstacle_avoidance_behavior(self):
+        """Enhanced obstacle avoidance behavior with state persistence"""
+        distance = self.px.get_distance()
+        current_time = time.time()
+        
+        # Check if we're currently in an avoidance maneuver
+        if self.avoidance_state['avoiding']:
+            time_avoiding = current_time - self.avoidance_state['avoid_start_time']
+            
+            # Continue avoidance for minimum duration, or until clear
+            if time_avoiding < self.avoidance_state['min_avoid_duration'] or (distance > 0 and distance < 60):
+                # Continue current avoidance maneuver
+                if distance > 0 and distance < 15:
+                    return {'action': 'sharp_avoid', 'speed': 25, 'angle': self.avoidance_state['avoid_direction'], 'urgency': 'high'}
+                else:
+                    return {'action': 'avoid_turn', 'speed': 30, 'angle': self.avoidance_state['avoid_direction'], 'urgency': 'medium'}
+            else:
+                # Avoidance complete
+                self.avoidance_state['avoiding'] = False
+                print("🛡️ Obstacle cleared - resuming normal operation")
+        
+        # New obstacle detection
+        if distance > 0 and distance < 50:  # Extended detection range
+            if not self.avoidance_state['avoiding']:
+                # Start new avoidance maneuver
+                self.avoidance_state['avoiding'] = True
+                self.avoidance_state['avoid_start_time'] = current_time
+                # Choose smarter direction (could be enhanced with side sensors)
+                self.avoidance_state['avoid_direction'] = random.choice([-70, 70])  # Aggressive turn
+                print(f"🛡️ Obstacle detected at {distance:.1f}cm - avoiding {self.avoidance_state['avoid_direction']}°")
+            
+            if distance < 10:
+                # Emergency - full reverse
+                return {'action': 'emergency_reverse', 'speed': 50, 'angle': 0, 'urgency': 'critical'}
+            elif distance < 20:
+                # Very close - sharp turn with backing
+                return {'action': 'sharp_avoid', 'speed': 25, 'angle': self.avoidance_state['avoid_direction'], 'urgency': 'high'}
+            elif distance < 35:
+                # Close - moderate avoidance turn
+                return {'action': 'avoid_turn', 'speed': 30, 'angle': self.avoidance_state['avoid_direction'], 'urgency': 'medium'}
+            else:
+                # Detected but not immediate threat - gentle correction
+                return {'action': 'gentle_avoid', 'speed': 35, 'angle': self.avoidance_state['avoid_direction'], 'urgency': 'low'}
+        
+        return None
 
 
 def explain_behavior_coordination():
@@ -178,7 +232,7 @@ def explain_behavior_coordination():
 
 
 def obstacle_avoidance_behavior(px):
-    """Obstacle avoidance behavior"""
+    """Simple obstacle avoidance behavior (stateless version)"""
     distance = px.get_distance()
     
     if distance > 0 and distance < 30:
@@ -187,7 +241,7 @@ def obstacle_avoidance_behavior(px):
             return {'action': 'backward', 'speed': 40, 'angle': 0, 'urgency': 'high'}
         else:
             # Close - turn away
-            turn_direction = random.choice([-30, 30])
+            turn_direction = random.choice([-45, 45])  # Sharper turns
             return {'action': 'turn', 'speed': 35, 'angle': turn_direction, 'urgency': 'medium'}
     
     return None
@@ -240,8 +294,28 @@ def execute_behavior_output(px, output):
     action = output.get('action', 'stop')
     speed = output.get('speed', 0)
     angle = output.get('angle', 0)
+    urgency = output.get('urgency', 'unknown')
     
-    if action == 'backward':
+    # Enhanced obstacle avoidance actions
+    if action == 'emergency_reverse':
+        px.set_dir_servo_angle(0)
+        px.backward(speed)
+        print(f"🚨 EMERGENCY REVERSE at {speed} speed!")
+    elif action == 'sharp_avoid':
+        px.set_dir_servo_angle(angle)
+        px.backward(20)  # Brief reverse while turning
+        px.forward(speed)
+        print(f"🛡️ Sharp avoidance: {angle}° at {speed} speed")
+    elif action == 'avoid_turn':
+        px.set_dir_servo_angle(angle)
+        px.forward(speed)
+        print(f"🛡️ Avoidance turn: {angle}° at {speed} speed")
+    elif action == 'gentle_avoid':
+        px.set_dir_servo_angle(angle)
+        px.forward(speed)
+        print(f"🛡️ Gentle avoid: {angle}° at {speed} speed")
+    # Standard actions
+    elif action == 'backward':
         px.set_dir_servo_angle(0)
         px.backward(speed)
     elif action == 'turn':
@@ -272,7 +346,7 @@ def subsumption_architecture_demo():
         
         # Register behaviors with priorities (higher = more important)
         coordinator.register_behavior('obstacle_avoidance', 
-                                     lambda: obstacle_avoidance_behavior(px), priority=10)
+                                     coordinator.obstacle_avoidance_behavior, priority=10)
         coordinator.register_behavior('line_following', 
                                      lambda: line_following_behavior(px), priority=5)
         coordinator.register_behavior('exploration', 
@@ -333,7 +407,7 @@ def behavior_fusion_demo():
         
         # Register behaviors with weights for fusion
         coordinator.register_behavior('obstacle_avoidance', 
-                                     lambda: obstacle_avoidance_behavior(px), priority=3)
+                                     coordinator.obstacle_avoidance_behavior, priority=3)
         coordinator.register_behavior('exploration', 
                                      lambda: exploration_behavior(px), priority=1)
         
@@ -380,7 +454,7 @@ def behavior_arbitration_demo():
         
         # Register behaviors
         coordinator.register_behavior('obstacle_avoidance', 
-                                     lambda: obstacle_avoidance_behavior(px), priority=8)
+                                     coordinator.obstacle_avoidance_behavior, priority=8)
         coordinator.register_behavior('line_following', 
                                      lambda: line_following_behavior(px), priority=6)
         coordinator.register_behavior('exploration', 
@@ -438,7 +512,7 @@ def dynamic_behavior_switching():
         
         # Register all behaviors
         coordinator.register_behavior('obstacle_avoidance', 
-                                     lambda: obstacle_avoidance_behavior(px), priority=10)
+                                     coordinator.obstacle_avoidance_behavior, priority=10)
         coordinator.register_behavior('line_following', 
                                      lambda: line_following_behavior(px), priority=5)
         coordinator.register_behavior('exploration', 

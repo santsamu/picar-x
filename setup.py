@@ -69,7 +69,12 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['readchar'],
+    install_requires=[
+        'readchar',
+        'SpeechRecognition>=3.14.0',
+        'pyttsx3>=2.99',
+        'PyAudio>=0.2.14'
+    ],
  
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
