@@ -19,6 +19,10 @@ from time import sleep, time
 from vilib import Vilib
 import math
 
+# Face tracking constants
+INITIAL_TILT_ANGLE = 50  # Start looking up at typical standing face height (350° gives good coverage for adults)
+INITIAL_PAN_ANGLE = 0    # Start centered horizontally
+
 
 def explain_face_tracking():
     """Explain face tracking concepts"""
@@ -37,8 +41,9 @@ def explain_face_tracking():
     print("   • Continuous tracking loop")
     print()
     print("🔧 Servo Control:")
-    print("   • Pan: Horizontal face following")
-    print("   • Tilt: Vertical face following")
+    print("   • Pan: Horizontal face following (-90° to +90°)")
+    print("   • Tilt: Vertical face following (-35° to +65°)")
+    print(f"   • Starts looking up at {INITIAL_TILT_ANGLE}° for standing face height")
     print("   • Smooth angle interpolation")
     print("   • Position limiting and safety")
     print()
@@ -63,9 +68,9 @@ def basic_face_tracking():
         Vilib.display(local=True, web=True)
         Vilib.face_detect_switch(True)
         
-        # Initialize servo positions
-        x_angle = 0
-        y_angle = 0
+        # Initialize servo positions - start looking up for faces at standing height
+        x_angle = INITIAL_PAN_ANGLE  # Start centered horizontally
+        y_angle = INITIAL_TILT_ANGLE  # Start looking up at face height
         px.set_cam_pan_angle(x_angle)
         px.set_cam_tilt_angle(y_angle)
         
@@ -93,10 +98,12 @@ def basic_face_tracking():
                     
                     # Update servo angles with proportional control
                     x_angle += x_adjustment
-                    x_angle = clamp_number(x_angle, -35, 35)
+                    x_angle = clamp_number(x_angle, px.constants.SERVO_LIMITS['cam_pan']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_pan']['max'])
                     
                     y_angle -= y_adjustment  # Invert Y for correct direction
-                    y_angle = clamp_number(y_angle, -35, 35)
+                    y_angle = clamp_number(y_angle, px.constants.SERVO_LIMITS['cam_tilt']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_tilt']['max'])
                     
                     # Apply servo positions
                     px.set_cam_pan_angle(x_angle)
@@ -134,11 +141,11 @@ def smooth_face_tracking():
         Vilib.display(local=True, web=True)
         Vilib.face_detect_switch(True)
         
-        # Enhanced tracking parameters
-        x_angle = 0
-        y_angle = 0
-        target_x_angle = 0
-        target_y_angle = 0
+        # Enhanced tracking parameters - start looking up for faces
+        x_angle = INITIAL_PAN_ANGLE
+        y_angle = INITIAL_TILT_ANGLE  # Start looking up at typical face height
+        target_x_angle = INITIAL_PAN_ANGLE
+        target_y_angle = INITIAL_TILT_ANGLE
         
         # Control parameters
         dead_zone = 30  # Pixels - prevents jittery movement
@@ -150,54 +157,65 @@ def smooth_face_tracking():
         
         print("🎯 Smooth face tracking active!")
         print("Enhanced algorithm with dead zones and smoothing")
+        print("Debug: Entering tracking loop...")
         
         tracking_quality = []
         smooth_movements = 0
         
         try:
             while True:
-                if Vilib.detect_obj_parameter['human_n'] != 0:
-                    coordinate_x = Vilib.detect_obj_parameter['human_x']
-                    coordinate_y = Vilib.detect_obj_parameter['human_y']
-                    
-                    # Calculate distance from center
-                    center_x, center_y = 320, 240
-                    error_x = coordinate_x - center_x
-                    error_y = coordinate_y - center_y
-                    
-                    # Apply dead zone
-                    if abs(error_x) > dead_zone:
-                        x_adjustment = (error_x / 320) * 45  # Scale to max angle
-                        target_x_angle = clamp_number(x_angle + x_adjustment, -35, 35)
-                    
-                    if abs(error_y) > dead_zone:
-                        y_adjustment = -(error_y / 240) * 30  # Invert and scale
-                        target_y_angle = clamp_number(y_angle + y_adjustment, -35, 35)
-                    
-                    # Smooth movement toward target
-                    x_diff = target_x_angle - x_angle
-                    y_diff = target_y_angle - y_angle
-                    
-                    if abs(x_diff) > 0.1:
-                        x_move = clamp_number(x_diff * smoothing_factor, -max_adjustment, max_adjustment)
-                        x_angle += x_move
-                        px.set_cam_pan_angle(x_angle)
-                        smooth_movements += 1
-                    
-                    if abs(y_diff) > 0.1:
-                        y_move = clamp_number(y_diff * smoothing_factor, -max_adjustment, max_adjustment)
-                        y_angle += y_move
-                        px.set_cam_tilt_angle(y_angle)
-                        smooth_movements += 1
-                    
-                    # Track quality (how centered the face is)
-                    face_distance_from_center = math.sqrt(error_x**2 + error_y**2)
-                    tracking_quality.append(face_distance_from_center)
-                    
-                    if len(tracking_quality) % 20 == 0:  # Every 20 detections
-                        avg_quality = sum(tracking_quality[-20:]) / 20
-                        print(f"🎯 Tracking quality: {avg_quality:.1f} pixels from center | "
-                              f"Position: ({x_angle:.1f}°, {y_angle:.1f}°)")
+                
+                try:
+                    if Vilib.detect_obj_parameter['human_n'] != 0:
+                        coordinate_x = Vilib.detect_obj_parameter['human_x']
+                        coordinate_y = Vilib.detect_obj_parameter['human_y']
+                        
+                        # Calculate distance from center
+                        center_x, center_y = 320, 240
+                        error_x = coordinate_x - center_x
+                        error_y = coordinate_y - center_y
+                        
+                        # Apply dead zone
+                        if abs(error_x) > dead_zone:
+                            x_adjustment = (error_x / 320) * 45  # Scale to max angle
+                            target_x_angle = clamp_number(x_angle + x_adjustment, 
+                                                        px.constants.SERVO_LIMITS['cam_pan']['min'], 
+                                                        px.constants.SERVO_LIMITS['cam_pan']['max'])
+                        
+                        if abs(error_y) > dead_zone:
+                            y_adjustment = -(error_y / 240) * 30  # Invert and scale
+                            target_y_angle = clamp_number(y_angle + y_adjustment, 
+                                                        px.constants.SERVO_LIMITS['cam_tilt']['min'], 
+                                                        px.constants.SERVO_LIMITS['cam_tilt']['max'])
+                        
+                        # Smooth movement toward target
+                        x_diff = target_x_angle - x_angle
+                        y_diff = target_y_angle - y_angle
+                        
+                        if abs(x_diff) > 0.1:
+                            x_move = clamp_number(x_diff * smoothing_factor, -max_adjustment, max_adjustment)
+                            x_angle += x_move
+                            px.set_cam_pan_angle(x_angle)
+                            smooth_movements += 1
+                        
+                        if abs(y_diff) > 0.1:
+                            y_move = clamp_number(y_diff * smoothing_factor, -max_adjustment, max_adjustment)
+                            y_angle += y_move
+                            px.set_cam_tilt_angle(y_angle)
+                            smooth_movements += 1
+                        
+                        # Track quality (how centered the face is)
+                        face_distance_from_center = math.sqrt(error_x**2 + error_y**2)
+                        tracking_quality.append(face_distance_from_center)
+                        
+                        if len(tracking_quality) % 20 == 0:  # Every 20 detections
+                            avg_quality = sum(tracking_quality[-20:]) / 20
+                            print(f"🎯 Tracking quality: {avg_quality:.1f} pixels from center | "
+                                  f"Position: ({x_angle:.1f}°, {y_angle:.1f}°)")
+                
+                except Exception as e:
+                    print(f"Debug: Error in detection loop: {e}")
+                    break
                 
                 sleep(0.05)
         
@@ -225,8 +243,8 @@ def multi_face_tracking():
         Vilib.display(local=True, web=True)
         Vilib.face_detect_switch(True)
         
-        x_angle = 0
-        y_angle = 0
+        x_angle = INITIAL_PAN_ANGLE
+        y_angle = INITIAL_TILT_ANGLE  # Start looking up for faces
         px.set_cam_pan_angle(x_angle)
         px.set_cam_tilt_angle(y_angle)
         
@@ -252,10 +270,12 @@ def multi_face_tracking():
                     
                     # Track this face
                     x_angle += (coordinate_x * 8 / 640) - 4
-                    x_angle = clamp_number(x_angle, -35, 35)
+                    x_angle = clamp_number(x_angle, px.constants.SERVO_LIMITS['cam_pan']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_pan']['max'])
                     
                     y_angle -= (coordinate_y * 8 / 480) - 4
-                    y_angle = clamp_number(y_angle, -35, 35)
+                    y_angle = clamp_number(y_angle, px.constants.SERVO_LIMITS['cam_tilt']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_tilt']['max'])
                     
                     px.set_cam_pan_angle(x_angle)
                     px.set_cam_tilt_angle(y_angle)
@@ -309,8 +329,8 @@ def face_tracking_with_movement():
         Vilib.display(local=True, web=True)
         Vilib.face_detect_switch(True)
         
-        x_angle = 0
-        y_angle = 0
+        x_angle = INITIAL_PAN_ANGLE
+        y_angle = INITIAL_TILT_ANGLE  # Start looking up for faces at standing height
         movement_enabled = True
         
         px.set_cam_pan_angle(x_angle)
@@ -330,10 +350,12 @@ def face_tracking_with_movement():
                     
                     # Camera tracking (as before)
                     x_angle += (coordinate_x * 6 / 640) - 3
-                    x_angle = clamp_number(x_angle, -35, 35)
+                    x_angle = clamp_number(x_angle, px.constants.SERVO_LIMITS['cam_pan']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_pan']['max'])
                     
                     y_angle -= (coordinate_y * 6 / 480) - 3
-                    y_angle = clamp_number(y_angle, -35, 35)
+                    y_angle = clamp_number(y_angle, px.constants.SERVO_LIMITS['cam_tilt']['min'], 
+                                         px.constants.SERVO_LIMITS['cam_tilt']['max'])
                     
                     px.set_cam_pan_angle(x_angle)
                     px.set_cam_tilt_angle(y_angle)
