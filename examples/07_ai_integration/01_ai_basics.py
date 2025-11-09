@@ -275,7 +275,7 @@ def ai_voice_control():
     # Initialize components
     personality = AIPersonality()
     tts = TTS()
-    tts.lang("en-US")  # Set language for TTS
+    tts.lang("en-us")  # Set language for TTS
     
     # Try to initialize voice controller
     try:

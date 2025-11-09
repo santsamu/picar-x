@@ -633,7 +633,8 @@ def goal_oriented_behavior():
     ]
     
     for goal in goals:
-        behavior_engine.add_goal(**goal)
+        goal_type = goal.pop("type")  # Extract the type as positional argument
+        behavior_engine.add_goal(goal_type, **goal)
     
     with Picarx() as px:
         print("🎯 Starting goal-oriented behavior demonstration...")

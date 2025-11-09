@@ -39,25 +39,51 @@ def play_recorded_audio(audio_data):
         # Create a temporary WAV file
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
             temp_filename = temp_file.name
-            
-        # Save the audio data as a WAV file
-        with wave.open(temp_filename, 'wb') as wav_file:
-            wav_file.setnchannels(1)  # Mono
-            wav_file.setsampwidth(2)  # 16-bit
-            wav_file.setframerate(16000)  # 16kHz sample rate
-            wav_file.writeframes(audio_data.get_wav_data())
+        
+        # Get the raw WAV data from the audio
+        wav_data = audio_data.get_wav_data()
+        
+        # Write the WAV data directly to file (preserves original quality)
+        with open(temp_filename, 'wb') as f:
+            f.write(wav_data)
+        
+        # Check the actual audio format by reading the WAV header
+        try:
+            with wave.open(temp_filename, 'rb') as wav_file:
+                channels = wav_file.getnchannels()
+                sample_width = wav_file.getsampwidth()
+                framerate = wav_file.getframerate()
+                frames = wav_file.getnframes()
+                duration = frames / framerate
+                print(f"📊 Audio format: {channels} channels, {sample_width*8}-bit, {framerate}Hz, {duration:.1f}s")
+        except:
+            print(f"📊 Audio info: {len(wav_data)} bytes")
         
         print("🔊 Playing back recorded audio...")
         
-        # Play the audio using aplay (ALSA player)
+        # Play the audio using aplay (ALSA player) with better settings
         with suppress_alsa_warnings():
-            result = subprocess.run(['aplay', temp_filename], 
-                                  capture_output=True, text=True)
+            # Use aplay with specific format to ensure proper playback
+            result = subprocess.run([
+                'aplay', 
+                '-f', 'S16_LE',  # 16-bit signed little endian
+                '-r', '44100',   # Try standard sample rate first
+                temp_filename
+            ], capture_output=True, text=True)
+            
+            # If that fails, try the original format
+            if result.returncode != 0:
+                print("🔄 Trying alternative playback format...")
+                result = subprocess.run([
+                    'aplay', 
+                    temp_filename
+                ], capture_output=True, text=True)
             
         if result.returncode == 0:
             print("✅ Audio playback completed")
         else:
             print("⚠️ Audio playback may have had issues")
+            print(f"Debug: {result.stderr}")
             
         # Clean up temporary file
         os.unlink(temp_filename)
@@ -75,7 +101,7 @@ def test_microphone():
     recognizer = sr.Recognizer()
     tts = TTS()
     tts.lang("en-us")  # Set language for TTS
-
+    tts.system_volume(100)
     print(f"System volume: {tts.system_volume()}")
     
     # Test USB microphone
