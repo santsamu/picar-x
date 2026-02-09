@@ -40,14 +40,18 @@ This directory contains sophisticated autonomous navigation systems for the PiCa
 
 ### `03_keyboard_navigation.py`
 **⌨️ Advanced Keyboard Navigation with Safety**
-- Professional teleoperation with real-time video feed
-- WASD/arrow key controls with speed adjustment
-- Active obstacle and cliff detection with safety overrides
-- Intelligent LED status indicators (RGB green/red, headlight blinking)
-- Audio feedback during reverse operations
-- Camera servo control (pan/tilt) via keyboard
+- Professional teleoperation with real-time video feed (local + web browser)
+- WASD/arrow key controls with tank turn maneuvering
+- Variable speed control (+/- keys, 10-100% range)
+- Restrictive safety system: blocks forward on danger, allows escape maneuvers
+- Active obstacle detection (10cm threshold with continuous monitoring)
+- Smart cliff detection (filtered to prevent false positives)
+- Intelligent LED status: green (safe), red (danger), yellow (manual override)
+- Headlight control: always-on mode with reverse blinking + toggle (Y key)
+- Audio feedback: TTS beep during reverse operations
+- Camera servo control (I/K/J/L for pan/tilt, H for home position)
 - Multi-threaded responsive control system
-- **Best for:** Manual exploration, testing, and learning sensor integration
+- **Best for:** Manual exploration, testing sensors, learning teleoperation safety
 
 ### `navigation_config.py`
 **⚙️ Configuration Management**
@@ -94,7 +98,9 @@ sudo python3 02_simple_navigation.py
 ### Keyboard-Controlled Navigation
 ```bash
 sudo python3 03_keyboard_navigation.py
-# Use WASD/arrows to drive, see video at http://[robot-ip]:9000/mjpg
+# Controls: WASD move, A/D tank turn, +/- speed, Y toggle lights
+# Camera view: http://[robot-ip]:9000/mjpg
+# Safety: Green LED = safe, Red LED = danger detected
 ```
 
 ### Advanced Navigation

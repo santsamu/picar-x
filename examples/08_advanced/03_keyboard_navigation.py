@@ -22,6 +22,9 @@ CONTROLS:
         + : Increase speed
         - : Decrease speed
         
+    Lights Control:
+        Y : Toggle headlights on/off
+        
     Camera Control:
         I : Tilt Up
         K : Tilt Down
@@ -338,7 +341,7 @@ class StatusDisplay:
         print()
         print("-" * 70)
         print("  Movement: W/↑ forward  S/↓ backward  A/← left  D/→ right  SPACE stop")
-        print("  Speed: +/- adjust     Camera: I/K tilt  J/L pan  H home")
+        print("  Speed: +/- adjust     Lights: Y toggle     Camera: I/K tilt  J/L pan")
         print("  System: Q quit  R reset  M toggle manual override")
         print("-" * 70)
         print()
@@ -407,6 +410,7 @@ def main():
         # Main control variables
         speed = 50
         manual_override = False
+        headlights_on = True  # Track headlight state
         cam_pan_angle = 0
         cam_tilt_angle = 0
         current_movement = "STOPPED"  # Track current movement state
@@ -448,6 +452,14 @@ def main():
                         speed = min(100, speed + 10)
                     elif key == '-' or key == '_':
                         speed = max(20, speed - 10)
+                        
+                    # Headlight toggle
+                    elif key_lower == 'y':
+                        headlights_on = not headlights_on
+                        if headlights_on:
+                            led.headlights_on(1.0)
+                        else:
+                            led.headlights_off()
                         
                     # Camera control
                     elif key_lower == 'h':

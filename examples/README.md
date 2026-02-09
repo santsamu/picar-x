@@ -105,7 +105,7 @@ cp keys.py.example keys.py
 **⏱️ 4 hours | 📊 Difficulty: ⭐⭐⭐⭐⭐**
 - `01_advanced_integration.py` - Multi-system coordination
 - `02_simple_navigation.py` - Navigation fundamentals
-- `03_keyboard_navigation.py` - Advanced teleoperation with safety features
+- `03_keyboard_navigation.py` - Real-time teleoperation with tank turns, restrictive safety, LED/audio feedback
 
 **Learn:** System architecture, sensor fusion, performance optimization, fault tolerance
 
