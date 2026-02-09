@@ -38,6 +38,17 @@ This directory contains sophisticated autonomous navigation systems for the PiCa
 - Perfect for learning and testing
 - **Best for:** Beginners and testing sensor integration
 
+### `03_keyboard_navigation.py`
+**⌨️ Advanced Keyboard Navigation with Safety**
+- Professional teleoperation with real-time video feed
+- WASD/arrow key controls with speed adjustment
+- Active obstacle and cliff detection with safety overrides
+- Intelligent LED status indicators (RGB green/red, headlight blinking)
+- Audio feedback during reverse operations
+- Camera servo control (pan/tilt) via keyboard
+- Multi-threaded responsive control system
+- **Best for:** Manual exploration, testing, and learning sensor integration
+
 ### `navigation_config.py`
 **⚙️ Configuration Management**
 - Centralized configuration for all navigation parameters
@@ -78,6 +89,12 @@ sudo python3 02_simple_navigation.py
 ```bash
 sudo python3 02_simple_navigation.py
 # Select option 1 for quick 15-second test
+```
+
+### Keyboard-Controlled Navigation
+```bash
+sudo python3 03_keyboard_navigation.py
+# Use WASD/arrows to drive, see video at http://[robot-ip]:9000/mjpg
 ```
 
 ### Advanced Navigation
@@ -188,6 +205,7 @@ sudo python3 01_autonomous_navigation.py
 
 - `01_autonomous_navigation.py` - Comprehensive autonomous navigation with sensor fusion and mapping
 - `02_simple_navigation.py` - Simplified navigation system perfect for learning and testing
+- `03_keyboard_navigation.py` - Advanced teleoperation with real-time video, safety monitoring, and LED/audio feedback
 - `navigation_config.py` - Configuration file for tuning navigation parameters
 - `01_advanced_integration.py` - Integration of multiple systems and sensors for complex behaviors
 

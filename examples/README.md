@@ -104,6 +104,8 @@ cp keys.py.example keys.py
 #### [08_advanced/](08_advanced/) - Expert-Level Systems
 **⏱️ 4 hours | 📊 Difficulty: ⭐⭐⭐⭐⭐**
 - `01_advanced_integration.py` - Multi-system coordination
+- `02_simple_navigation.py` - Navigation fundamentals
+- `03_keyboard_navigation.py` - Advanced teleoperation with safety features
 
 **Learn:** System architecture, sensor fusion, performance optimization, fault tolerance
 
