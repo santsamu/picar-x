@@ -38,6 +38,8 @@ cp keys.py.example keys.py
 - `01_hello_world.py` - Your first robot program
 - `02_context_manager.py` - Safe programming practices  
 - `03_robot_status.py` - Monitoring robot health
+- `04_rgb_led_extension.py` - RGB signals + headlights
+- `05_headlights.py` - Headlights control
 
 **Learn:** Basic robot control, safety patterns, status monitoring
 

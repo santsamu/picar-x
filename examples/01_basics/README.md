@@ -39,6 +39,19 @@ In this section, you'll learn:
 - Debug connection issues
 - **Difficulty**: ⭐⭐☆
 
+### **04_rgb_led_extension.py** 💡
+**RGB signals + headlights**
+- Control RGB status LED (signals)
+- Control left/right headlights on P6/P7
+- Learn brightness control patterns
+- **Difficulty**: ⭐☆☆
+
+### **05_headlights.py** 🔦
+**Front headlights control**
+- Turn headlights on/off
+- Set shared brightness for both headlights
+- **Difficulty**: ⭐☆☆
+
 ## 🚀 **Getting Started**
 
 ### **Run Your First Example**
