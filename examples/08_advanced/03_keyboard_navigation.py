@@ -38,7 +38,7 @@ CONTROLS:
         M : Toggle manual override (bypass safety)
         
 SAFETY FEATURES:
-    🟢 Green RGB : All clear, safe to move
+    🌈 Rainbow RGB : All clear, breathing animation through colors
     🔴 Red RGB : Danger detected (obstacle or cliff)
     🟡 Yellow RGB : Manual override (all safety checks disabled)
     💡 Headlights : Always on, blink during reverse
@@ -66,6 +66,31 @@ import readchar
 import threading
 import time
 import sys
+import math
+import colorsys
+
+
+def get_breathing_color(elapsed_time: float) -> str:
+    """Generate a breathing color animation that cycles through rainbow colors
+    
+    Args:
+        elapsed_time: Time in seconds since animation started
+        
+    Returns:
+        Hex color string (e.g., "#FF00FF")
+    """
+    # Breathing effect: oscillate brightness with a sine wave (2 second period)
+    breathing_phase = (math.sin(elapsed_time * math.pi) + 1) / 2  # 0 to 1
+    brightness = 0.3 + (breathing_phase * 0.7)  # Range from 0.3 to 1.0
+    
+    # Color cycling: rotate through rainbow (5 second period for full cycle)
+    hue = (elapsed_time / 5.0) % 1.0  # 0 to 1
+    
+    # Convert HSV to RGB (saturation = 1.0 for vibrant colors)
+    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, brightness)
+    
+    # Convert to hex color string
+    return "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
 
 
 class SafetyMonitor:
@@ -89,8 +114,9 @@ class SafetyMonitor:
         
         # Filtering for cliff detection (prevent flickering)
         self.cliff_detection_counter = 0
-        self.CLIFF_DETECTION_REQUIRED = 5  # Need 5 consecutive detections to trigger
-        self.CLIFF_CLEAR_REQUIRED = 10     # Need 10 consecutive clears to reset
+        self.CLIFF_DETECTION_REQUIRED = 25  # Need 25 consecutive detections to trigger (2.5 seconds)
+        self.CLIFF_CLEAR_REQUIRED = 40     # Need 40 consecutive clears to reset (4 seconds)
+        self.cliff_raw_status = False  # Raw cliff reading before filtering
         
     def start(self):
         """Start the safety monitoring thread"""
@@ -121,23 +147,29 @@ class SafetyMonitor:
                 
                 # Update cliff flag with filtering (use built-in method like cliff_detection.py)
                 cliff_reading = self.px.get_cliff_status(self.grayscale)
+                self.cliff_raw_status = cliff_reading  # Store for debugging
                 
                 if cliff_reading:
                     # Cliff detected in this reading
                     self.cliff_detection_counter += 1
                     if self.cliff_detection_counter >= self.CLIFF_DETECTION_REQUIRED:
                         self.cliff_detected = True
+                        self.cliff_detection_counter = self.CLIFF_DETECTION_REQUIRED  # Cap at max
                 else:
                     # No cliff in this reading
                     if self.cliff_detected:
                         # Currently in cliff state, need consecutive clears to exit
                         self.cliff_detection_counter -= 1
+                        if self.cliff_detection_counter <= 0:
+                            # Start counting clears
+                            pass
                         if self.cliff_detection_counter <= -self.CLIFF_CLEAR_REQUIRED:
                             self.cliff_detected = False
                             self.cliff_detection_counter = 0
                     else:
-                        # Not in cliff state, reset counter
-                        self.cliff_detection_counter = max(0, self.cliff_detection_counter - 1)
+                        # Not in cliff state, reset counter toward zero
+                        if self.cliff_detection_counter > 0:
+                            self.cliff_detection_counter = max(0, self.cliff_detection_counter - 2)  # Decay faster
                 
             except Exception as e:
                 # Silently continue on sensor errors
@@ -160,7 +192,9 @@ class SafetyMonitor:
     def get_status_text(self) -> str:
         """Get formatted status text"""
         if self.cliff_detected:
-            return "⚠️  CLIFF DETECTED"
+            return f"⚠️  CLIFF DETECTED (clearing: {-self.cliff_detection_counter}/{self.CLIFF_CLEAR_REQUIRED})"
+        elif self.cliff_raw_status and self.cliff_detection_counter > 0:
+            return f"⚠️  Cliff raw detected (count: {self.cliff_detection_counter}/{self.CLIFF_DETECTION_REQUIRED})"
         elif self.obstacle_detected:
             return "⚠️  OBSTACLE AHEAD"
         else:
@@ -401,7 +435,7 @@ def main():
         
         # Turn on headlights
         led.headlights_on(1.0)
-        led.set_color("#00FF00")  # Start with green
+        led.set_color(get_breathing_color(0))  # Start with breathing animation
         
         print()
         print("🎮 System ready! Use keyboard controls (press Q to quit)")
@@ -414,6 +448,12 @@ def main():
         cam_pan_angle = 0
         cam_tilt_angle = 0
         current_movement = "STOPPED"  # Track current movement state
+        
+        # Animation state for breathing LED effect
+        animation_start_time = time.time()
+        
+        # Animation state
+        animation_start_time = time.time()
         
         # Start main control loop
         display.clear_screen()
@@ -559,7 +599,9 @@ def main():
                     if safety.cliff_detected or safety.obstacle_detected:
                         led.set_color("#FF0000")  # Red for danger
                     else:
-                        led.set_color("#00FF00")  # Green for safe
+                        # Breathing rainbow animation for safe mode
+                        elapsed = time.time() - animation_start_time
+                        led.set_color(get_breathing_color(elapsed))
                 else:
                     led.set_color("#FFFF00")  # Yellow for manual override
                 
