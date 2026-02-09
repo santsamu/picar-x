@@ -9,7 +9,7 @@ ColorInput = Union[str, int, Tuple[int, int, int], List[int]]
 class PicarxLedController:
     """RGB LED helper with optional headlights for PiCar-X.
 
-    Defaults RGB to P3/P4/P5 and headlights to P6/P7.
+    Defaults RGB to P4/P5/P6 and headlights to P7/P8.
     """
 
     ANODE = 1
@@ -17,11 +17,11 @@ class PicarxLedController:
 
     def __init__(
         self,
-        r_pin: str = "P3",
-        g_pin: str = "P4",
-        b_pin: str = "P5",
-        headlight_left_pin: str = "P6",
-        headlight_right_pin: str = "P7",
+        r_pin: str = "P4",
+        g_pin: str = "P5",
+        b_pin: str = "P6",
+        headlight_left_pin: str = "P7",
+        headlight_right_pin: str = "P8",
         common: int = CATHODE,
         freq_hz: int = 1000,
         color_order: str = "RGB",

@@ -23,10 +23,10 @@ import socket
 import sys
 
 
-def start_camera(vflip=False, hflip=False):
+def start_camera(vflip=False, hflip=False, size=None):
     """Start camera with settings"""
     print("🔄 Starting camera...")
-    Vilib.camera_start(vflip=vflip, hflip=hflip)
+    Vilib.camera_start(vflip=vflip, hflip=hflip, size=size)
     Vilib.display(local=True, web=True)
     time.sleep(1)
     
@@ -143,6 +143,59 @@ def camera_settings_demo():
     finally:
         stop_camera()
         print("\n⚙️ Camera settings demo complete!")
+
+
+def camera_resolution_demo():
+    """Switch between common resolution modes"""
+    print("📐 Camera Resolution Modes")
+    print("Switch between resolutions (Pi Camera v2 supported modes)")
+    print()
+
+    resolution_modes = [
+        {"name": "VGA", "size": (640, 480), "note": "Fast preview"},
+        {"name": "HD", "size": (1280, 720), "note": "Balanced"},
+        {"name": "FHD", "size": (1920, 1080), "note": "Sharper detail"},
+    ]
+
+    mode_index = 0
+
+    try:
+        start_camera(size=resolution_modes[mode_index]["size"])
+
+        while True:
+            current = resolution_modes[mode_index]
+            width, height = current["size"]
+            print(f"\nCurrent mode: {current['name']} ({width}x{height}) - {current['note']}")
+            print("Keys: 1/2/3 select mode, n next, q quit")
+            command = input("Select: ").strip().lower()
+
+            if command == 'q':
+                break
+
+            if command == 'n':
+                next_index = (mode_index + 1) % len(resolution_modes)
+            elif command in ['1', '2', '3']:
+                next_index = int(command) - 1
+            else:
+                print("⚠️ Invalid input. Use 1/2/3, n, or q")
+                continue
+
+            if next_index == mode_index:
+                print("ℹ️ Already on that mode")
+                continue
+
+            stop_camera()
+            time.sleep(0.5)
+            mode_index = next_index
+            start_camera(size=resolution_modes[mode_index]["size"])
+
+        print("\n📐 Resolution demo complete!")
+
+    except Exception as e:
+        print(f"❌ Resolution demo error: {e}")
+
+    finally:
+        stop_camera()
 
 
 def take_photo_demo():
@@ -344,32 +397,35 @@ def main():
         print("\nChoose a camera demonstration:")
         print("1. 📹 Basic camera test")
         print("2. ⚙️ Camera settings demo")
-        print("3. 📸 Photo taking demo")
-        print("4. 🤖 Camera with servo control")
-        print("5. 🔧 Camera diagnostics")
-        print("6. ❓ Explain camera system")
-        print("7. 🚪 Exit")
+        print("3. 📐 Resolution modes demo")
+        print("4. 📸 Photo taking demo")
+        print("5. 🤖 Camera with servo control")
+        print("6. 🔧 Camera diagnostics")
+        print("7. ❓ Explain camera system")
+        print("8. 🚪 Exit")
         
         try:
-            choice = input("\nEnter choice (1-7): ").strip()
+            choice = input("\nEnter choice (1-8): ").strip()
             
             if choice == '1':
                 basic_camera_test()
             elif choice == '2':
                 camera_settings_demo()
             elif choice == '3':
-                take_photo_demo()
+                camera_resolution_demo()
             elif choice == '4':
-                camera_with_servos()
+                take_photo_demo()
             elif choice == '5':
-                camera_diagnostics()
+                camera_with_servos()
             elif choice == '6':
-                explain_camera_system()
+                camera_diagnostics()
             elif choice == '7':
+                explain_camera_system()
+            elif choice == '8':
                 print("👋 Happy filming!")
                 break
             else:
-                print("⚠️ Invalid choice. Please enter 1-7.")
+                print("⚠️ Invalid choice. Please enter 1-8.")
                 
         except KeyboardInterrupt:
             print("\n👋 Camera tutorial interrupted!")

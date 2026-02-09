@@ -1,13 +1,13 @@
 from robot_hat import PWM
 import time
 
-r = PWM("P3")
-g = PWM("P4")
-b = PWM("P5")
+r = PWM("P4")
+g = PWM("P5")
+b = PWM("P6")
 
 
-fr = PWM("P6")
-fl = PWM("P7")
+fr = PWM("P7")
+fl = PWM("P8")
 
 r.freq(1000)
 g.freq(1000)
